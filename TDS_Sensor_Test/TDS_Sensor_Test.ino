@@ -13,7 +13,7 @@ void setup() {
 
 void loop() {
   static unsigned long analogSampleTimepoint = millis();
-  if (millis() - analogSampleTimepoint > 40 U) //every 40 milliseconds,read the analog value from the ADC
+  if (millis() - analogSampleTimepoint > 40U) //every 40 milliseconds,read the analog value from the ADC
   {
     analogSampleTimepoint = millis();
     analogBuffer[analogBufferIndex] = analogRead(TdsSensorPin); //read the analog value and store into the buffer
@@ -22,7 +22,7 @@ void loop() {
       analogBufferIndex = 0;
   }
   static unsigned long printTimepoint = millis();
-  if (millis() - printTimepoint > 800 U) {
+  if (millis() - printTimepoint > 800U) {
     printTimepoint = millis();
     for (copyIndex = 0; copyIndex < SCOUNT; copyIndex++)
       analogBufferTemp[copyIndex] = analogBuffer[copyIndex];
