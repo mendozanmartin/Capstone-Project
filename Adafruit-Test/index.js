@@ -1,5 +1,5 @@
 const ADAFRUIT_IO_USERNAME = "mendozanmartin"
-const ADAFRUIT_IO_KEY = "aio_rYQs142y3bp6Tvqun7b6qRC1SYzH"
+const ADAFRUIT_IO_KEY = "aio_xYpn92R9hsfHwDcEAFckkMD07VpX"
 
 const axios = require('axios')
 
