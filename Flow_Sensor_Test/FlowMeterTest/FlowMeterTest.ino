@@ -1,34 +1,41 @@
+#include <MsTimer2.h>
+
 int signalPin = 7;
 float VREF = 5.0; // analog reference
 int pulseSignal = 0;
 int pulseCount;
-int volume;
-unsigned long time1 = millis();
-unsigned long time2 = 0;
 float flowRate = 0;
+unsigned long delta_t;
+unsigned long initial_t = 0;
+unsigned long final_t;
 
 void setup() {
   Serial.begin(115200);
-  // put your setup code here, to run once:
+  // put your setup code here to run once:
   pinMode(signalPin, INPUT);
+    MsTimer2::set(5000, flow_Rate);
+    MsTimer2::start();
+    Serial.println("Timer Initialized");
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  // put your main code here to run repeatedly:
+  
   pulseSignal = digitalRead(signalPin);
   if (pulseSignal == 1) {
     pulseCount++;
-    time2 = time1 - time2;
     Serial.println("pulsed");
   }
-  if (pulseCount == 450) {
-    volume = 1;
-    Serial.println(millis());
-    Serial.println(time1);
-    Serial.println(time2);
-    flowRate = volume / (time2 * pow(10, -3) / 60);
-    pulseCount = 0;
-    volume = 0;
-    Serial.println("Flow Rate: " + String(flowRate) + " L/s");
-    }
 }
+
+void flow_Rate() {
+  Serial.println("Hello, World!");
+  final_t = millis();
+  delta_t = final_t - initial_t;
+  Serial.println(millis());
+  Serial.println(String(final_t));
+  flowRate = (pulseCount/450) / (delta_t * pow(10, -3) / 60);
+  Serial.println("Flow Rate: " + String(flowRate) + " L/min");
+  pulseCount = 0;
+  initial_t = final_t;
+  }
