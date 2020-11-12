@@ -1,9 +1,8 @@
 const express = require('express');
 const ngrok = require('ngrok');
-var bodyParser = require('body-parser')
 
 const app = express();
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.json());
 
 (async function () {
     const url = await ngrok.connect();
