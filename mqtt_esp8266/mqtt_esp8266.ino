@@ -7,32 +7,33 @@
 //
 #include "WiFiEsp.h"
 #include <PubSubClient.h>
-// Emulate Serial1 on pins 10/11 if not present
-//#include "SoftwareSerial.h"
-//#include "HardwareSerial.h"
-//SoftwareSerial Serial1(50,51); // RX, TX
 
-char ssid[] = "martin06m";            // your network SSID (name)
-char pass[] = "mathea06m";        // your network password
+
+char ssid[] = "Martin!";            // your network SSID (name)
+char pass[] = "martinmendoza";        // your network password
 char ADAFRUIT_IO_USERNAME[] = "mendozanmartin";
-char ADAFRUIT_IO_KEY[] = "aio_xYpn92R9hsfHwDcEAFckkMD07VpX";
+char ADAFRUIT_IO_KEY[] = "aio_wwQH757UghxuMx3TXIfjEUICj0DU";
 int status = WL_IDLE_STATUS;     // the Wifi radio's status
 
-char server[] = "io.adafruit.com";
+//char server[] = "io.adafruit.com";
+char server[] = "broker.hivemq.com";
 int port = 1883;
+
+void callback(char* topic, byte* payload, unsigned int length);
+
 
 // Initialize the Ethernet client object
 WiFiEspClient client;
-PubSubClient mqttClient(client);
+PubSubClient mqttClient(server, port, callback,client);
 void setup()
 {
   // initialize serial for debugging
-  Serial.begin(115200);
+  Serial.begin(9600);
   // initialize serial for ESP module
   Serial1.begin(115200);
   // initialize ESP module
   WiFi.init(&Serial1);
-
+    
   // check for the presence of the shield
   if (WiFi.status() == WL_NO_SHIELD) {
     Serial.println("WiFi shield not present");
@@ -52,31 +53,21 @@ void setup()
   Serial.println("You're connected to the network");
 
   printWifiStatus();
-  mqttClient.setServer(server, port);
-  mqttClient.connect("arduino-1", ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEY);
-  Serial.println("Connected to " + String(server));
+//  mqttClient.setServer(server, port);
+//  mqttClient.setCallback(callback);
 
-  mqttClient.publish("mendozanmartin/feeds/outlet-flowrate", "2031");
+  pinMode(LED_BUILTIN, OUTPUT);
 }
 
 void loop()
 {
-//  // if there are incoming bytes available
-//  // from the server, read them and print them
-//  while (client.available()) {
-//    char c = client.read();
-//    Serial.write(c);
-//  }
-//
-//  // if the server's disconnected, stop the client
-//  if (!client.connected()) {
-//    Serial.println();
-//    Serial.println("Disconnecting from server...");
-//    client.stop();
-//
-//    // do nothing forevermore
-//    while (true);
-//  }
+  if (!mqttClient.connected()) {
+    reconnect();
+  }
+
+  delay(1000);
+  mqttClient.loop();
+  
 }
 
 
@@ -96,5 +87,58 @@ void printWifiStatus()
   Serial.print("Signal strength (RSSI):");
   Serial.print(rssi);
   Serial.println(" dBm");
+
+}
+
+void connectToMQTT() {
+  String clientId = "ESP8266Client-";
+  clientId += String(random(0xffff), HEX);
+//  if(mqttClient.connect(clientId.c_str(), ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEY)) {
+  if (mqttClient.connect(clientId.c_str())) {
+    Serial.print("Connected to: ");
+    Serial.println(server);
+  } else {
+    Serial.print("failed, rc=");
+    Serial.print(mqttClient.state());
+    Serial.println(" try again in 2 seconds");
+    delay(2000);
+  }
+
+//  boolean isSubscribed = mqttClient.subscribe("mendozanmartin/feeds/outlet-valve", 1);
+  boolean isSubscribed = mqttClient.subscribe("hello", 1);
+
+  if (isSubscribed) {
+    Serial.println("MQTT client is subscribed to topic");
+  } else {
+    Serial.println("MQTT client is not subscribed to topic");
+  }
+}
+
+void reconnect() {
+  while (!mqttClient.connected()) {
+    Serial.print("Attempting MQTT connection...");
+    connectToMQTT();
+  }
+//  return mqttClient.connected();
+}
+
+void callback(char* topic, byte* payload, unsigned int length) {
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.println("] ");
+
+  char message[20];
+  for(int i = 0; i < length; i++)
+  {
+    message[i] = payload[i];
+  }
+  Serial.println(message[1]);  
+ if (message[1] == 'N') {
+  Serial.println("LED ON");
+  digitalWrite(LED_BUILTIN, HIGH);
+ } else if (message[1] == 'F') {
+  Serial.println("LED OFF");
+  digitalWrite(LED_BUILTIN, LOW);
+  }
 
 }
