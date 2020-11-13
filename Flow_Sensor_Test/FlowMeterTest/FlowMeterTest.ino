@@ -16,7 +16,7 @@ void loop() {
   // put your main code here to run repeatedly:
   
   pulseSignal = digitalRead(signalPin);
-  if (pulseSignal != lastPulseSignal && pulseSignal == 1) {
+  if (pulseSignal != lastPulseSignal && pulseSignal == true) {
     pulseCount++;
   }
   lastPulseSignal = pulseSignal;
@@ -24,11 +24,11 @@ void loop() {
   final_t = millis();
   delta_t = final_t - initial_t;
 
-  if (delta_t >= 1000){
-  Serial.println("Pulse Count: " + String(pulseCount));
-  Serial.println("Flow Rate delta t: " + String(delta_t) + "ms");
+  if (delta_t >= 60000){
+  //Serial.println("Pulse Count: " + String(pulseCount));
+  //Serial.println("Flow Rate delta t: " + String(delta_t) + "ms");
   flowRate = (pulseCount/450.0) / (delta_t * pow(10, -3) / 60.0);
-  Serial.println("Flow Rate: " + String(flowRate) + " L/min");
+  //Serial.println("Flow Rate: " + String(flowRate) + " L/min");
   pulseCount = 0;
   initial_t = final_t;
   }
