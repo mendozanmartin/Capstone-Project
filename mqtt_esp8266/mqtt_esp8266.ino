@@ -14,6 +14,9 @@ int analogBufferTemp[SCOUNT];
 int analogBufferIndex = 0, copyIndex = 0;
 float averageVoltage = 0, tdsValue = 0, temperature = 25;
 
+#define pressureSensorPin A0
+int pressureSensorValue = 0;
+float pressureSensorVoltage = 0;
 
 #include "WiFiEsp.h"
 //#include "SAM32WiFiEsp.h"
@@ -95,9 +98,13 @@ void loop()
     if (analogBufferIndex == SCOUNT)
       analogBufferIndex = 0;
   }
-  static unsigned long printTimepoint = millis();
-  if (millis() - printTimepoint > 10000U) {
-    printTimepoint = millis();
+  static unsigned long tdsTimepoint = millis();
+  static unsigned long pressureTimepoint = millis();
+
+  char msgBuffer[20];           // make sure this is big enough to hold your string    
+
+  if (millis() - tdsTimepoint > 5000U) {
+    tdsTimepoint = millis();
     for (copyIndex = 0; copyIndex < SCOUNT; copyIndex++)
       analogBufferTemp[copyIndex] = analogBuffer[copyIndex];
     averageVoltage = getMedianNum(analogBufferTemp, SCOUNT) * (float) VREF / 1024.0; // read the analog value more stable by the median filtering algorithm, and convert to voltage value
@@ -107,12 +114,23 @@ void loop()
     //Serial.print("voltage:");
     //Serial.print(averageVoltage,2);
     //Serial.print("V ");
-    char msgBuffer[20];           // make sure this is big enough to hold your string    
     mqttClient.publish("TDS-collection", dtostrf(tdsValue, 6, 2, msgBuffer));
     Serial.print("TDS Value:");
     Serial.print(tdsValue, 0);
     Serial.println("ppm");
+  } 
+  
+  if (millis() - pressureTimepoint > 7000U) {
+    pressureTimepoint = millis();
+
+    pressureSensorValue = analogRead(pressureSensorPin);            // read the input on sensor pin
+    pressureSensorVoltage = pressureSensorValue * (5.0 / 1023.0);         // Convert the analog reading (which goes from 0 - 1023) to a pressureSensorVoltage (0 - 5V)
+    mqttClient.publish("Pressure-collection", dtostrf(pressureSensorVoltage, 6, 2, msgBuffer));
+    Serial.print("Pressure Sensor Value:");
+    Serial.print(pressureSensorVoltage, 0);
+    Serial.println("V");  
   }
+  
 }
 
 
