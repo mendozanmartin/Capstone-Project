@@ -27,7 +27,7 @@ void loop() {
   if (delta_t >= 60000){
   //Serial.println("Pulse Count: " + String(pulseCount));
   //Serial.println("Flow Rate delta t: " + String(delta_t) + "ms");
-  flowRate = (pulseCount/450.0) / (delta_t * pow(10, -3) / 60.0);
+  flowRate = (pulseCount/425.0) / (delta_t * pow(10, -3) / 60.0);
   //Serial.println("Flow Rate: " + String(flowRate) + " L/min");
   pulseCount = 0;
   initial_t = final_t;
