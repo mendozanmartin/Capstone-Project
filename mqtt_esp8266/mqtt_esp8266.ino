@@ -4,15 +4,28 @@
 // perform a simple web search.
 // For more details see: http://yaab-arduino.blogspot.com/p/wifiesp-example-client.html
 //*/
-//
+//s
+
+#define TdsSensorPin A1
+#define VREF 5.0 // analog reference voltage(Volt) of the ADC
+#define SCOUNT 30 // sum of sample point
+int analogBuffer[SCOUNT]; // store the analog value in the array, read from ADC
+int analogBufferTemp[SCOUNT];
+int analogBufferIndex = 0, copyIndex = 0;
+float averageVoltage = 0, tdsValue = 0, temperature = 25;
+
+
 #include "WiFiEsp.h"
+//#include "SAM32WiFiEsp.h"
+
+
 #include <PubSubClient.h>
 
 
 char ssid[] = "Martin!";            // your network SSID (name)
 char pass[] = "martinmendoza";        // your network password
 char ADAFRUIT_IO_USERNAME[] = "mendozanmartin";
-char ADAFRUIT_IO_KEY[] = "aio_wwQH757UghxuMx3TXIfjEUICj0DU";
+char ADAFRUIT_IO_KEY[] = "aio_HpFX47bwUsrNTWi7Ba2JgnRYFWhe";
 int status = WL_IDLE_STATUS;     // the Wifi radio's status
 
 //char server[] = "io.adafruit.com";
@@ -27,8 +40,10 @@ WiFiEspClient client;
 PubSubClient mqttClient(server, port, callback,client);
 void setup()
 {
+  pinMode(TdsSensorPin, INPUT);
+
   // initialize serial for debugging
-  Serial.begin(9600);
+  Serial.begin(115200);
   // initialize serial for ESP module
   Serial1.begin(115200);
   // initialize ESP module
@@ -53,6 +68,9 @@ void setup()
   Serial.println("You're connected to the network");
 
   printWifiStatus();
+
+  mqttClient.setBufferSize(1024);
+
 //  mqttClient.setServer(server, port);
 //  mqttClient.setCallback(callback);
 
@@ -65,9 +83,36 @@ void loop()
     reconnect();
   }
 
-  delay(1000);
   mqttClient.loop();
-  
+  delay(1000);
+
+   static unsigned long analogSampleTimepoint = millis();
+  if (millis() - analogSampleTimepoint > 40U) //every 40 milliseconds,read the analog value from the ADC
+  {
+    analogSampleTimepoint = millis();
+    analogBuffer[analogBufferIndex] = analogRead(TdsSensorPin); //read the analog value and store into the buffer
+    analogBufferIndex++;
+    if (analogBufferIndex == SCOUNT)
+      analogBufferIndex = 0;
+  }
+  static unsigned long printTimepoint = millis();
+  if (millis() - printTimepoint > 10000U) {
+    printTimepoint = millis();
+    for (copyIndex = 0; copyIndex < SCOUNT; copyIndex++)
+      analogBufferTemp[copyIndex] = analogBuffer[copyIndex];
+    averageVoltage = getMedianNum(analogBufferTemp, SCOUNT) * (float) VREF / 1024.0; // read the analog value more stable by the median filtering algorithm, and convert to voltage value
+    float compensationCoefficient = 1.0 + 0.02 * (temperature - 25.0); //temperature compensation formula: fFinalResult(25^C) = fFinalResult(current)/(1.0+0.02*(fTP-25.0));
+    float compensationVoltage = averageVoltage / compensationCoefficient; //temperature compensation
+    tdsValue = (133.42 * compensationVoltage * compensationVoltage * compensationVoltage - 255.86 * compensationVoltage * compensationVoltage + 857.39 * compensationVoltage) * 0.5; //convert voltage value to tds value
+    //Serial.print("voltage:");
+    //Serial.print(averageVoltage,2);
+    //Serial.print("V ");
+    char msgBuffer[20];           // make sure this is big enough to hold your string    
+    mqttClient.publish("TDS-collection", dtostrf(tdsValue, 6, 2, msgBuffer));
+    Serial.print("TDS Value:");
+    Serial.print(tdsValue, 0);
+    Serial.println("ppm");
+  }
 }
 
 
@@ -105,8 +150,10 @@ void connectToMQTT() {
   }
 
 //  boolean isSubscribed = mqttClient.subscribe("mendozanmartin/feeds/outlet-valve", 1);
-  boolean isSubscribed = mqttClient.subscribe("hello", 1);
+  boolean isSubscribed = mqttClient.subscribe("outlet-valve", 1);
+  boolean isSubscribed2 = mqttClient.subscribe("inlet-valve", 1);
 
+  mqttClient.publish("TDS-collection", "40");
   if (isSubscribed) {
     Serial.println("MQTT client is subscribed to topic");
   } else {
@@ -127,18 +174,39 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print(topic);
   Serial.println("] ");
 
-  char message[20];
+  char message[length];
   for(int i = 0; i < length; i++)
   {
     message[i] = payload[i];
   }
   Serial.println(message[1]);  
  if (message[1] == 'N') {
-  Serial.println("LED ON");
+  Serial.println(message);
   digitalWrite(LED_BUILTIN, HIGH);
  } else if (message[1] == 'F') {
-  Serial.println("LED OFF");
+  Serial.println(message);
   digitalWrite(LED_BUILTIN, LOW);
   }
 
+}
+
+int getMedianNum(int bArray[], int iFilterLen) {
+  int bTab[iFilterLen];
+  for (byte i = 0; i < iFilterLen; i++)
+    bTab[i] = bArray[i];
+  int i, j, bTemp;
+  for (j = 0; j < iFilterLen - 1; j++) {
+    for (i = 0; i < iFilterLen - j - 1; i++) {
+      if (bTab[i] > bTab[i + 1]) {
+        bTemp = bTab[i];
+        bTab[i] = bTab[i + 1];
+        bTab[i + 1] = bTemp;
+      }
+    }
+  }
+  if ((iFilterLen & 1) > 0)
+    bTemp = bTab[(iFilterLen - 1) / 2];
+  else
+    bTemp = (bTab[iFilterLen / 2] + bTab[iFilterLen / 2 - 1]) / 2;
+  return bTemp;
 }
