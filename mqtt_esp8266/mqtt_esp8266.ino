@@ -22,10 +22,10 @@ int analogBufferIndex = 0, copyIndex = 0;
 float averageVoltage = 0, tdsValue = 0, temperature = 25;
 int pressureSensorValue = 0;
 float pressureSensorVoltage = 0;
-char ssid[] = "martin06m";            // your network SSID (name)
-char pass[] = "mathea06m";        // your network password
+char ssid[] = "Martin!";            // your network SSID (name)
+char pass[] = "martinmendoza";        // your network password
 char ADAFRUIT_IO_USERNAME[] = "mendozamartin";
-char ADAFRUIT_IO_KEY[] = "aio_RgNV89f3e96ypESO7erFHcXeq0zv";
+char ADAFRUIT_IO_KEY[] = "aio_xqXA45Lsc2EbsSVzoL9TNb1GN1ZF";
 int status = WL_IDLE_STATUS;     // the Wifi radio's status
 
 char server[] = "io.adafruit.com";
@@ -41,6 +41,7 @@ WiFiEspClient client;
 PubSubClient mqttClient(server, port, callback,client);
 Timer mqttLoop;
 Timer sensorLoop;
+int PUBLISH_INTERVAL = 3500;
 
 void setup()
 {
@@ -80,7 +81,7 @@ void setup()
 
   pinMode(LED_BUILTIN, OUTPUT);
   mqttLoop.every(1000, mqttConnect);
-  sensorLoop.every(5000, sensorPublish);
+  sensorLoop.every(PUBLISH_INTERVAL*3, sensorPublish);
 }
 
 void mqttConnect() {
@@ -101,7 +102,7 @@ void sensorPublish() {
     Serial.print(pressureSensorVoltage, 0);
     Serial.println("V");  
 
-    delay(2000);
+    delay(PUBLISH_INTERVAL);
 
     int sensorValue = analogRead(A0);// read the input on analog pin 0:
     float voltage = sensorValue * (5.0 / 1024.0); // Convert the analog reading (which goes from 0 - 1023) to a voltage (0 - 5V):
@@ -111,6 +112,29 @@ void sensorPublish() {
     mqttClient.publish("mendozamartin/feeds/collection-tank-turbidity", dtostrf(NTU, 6, 2, msgBuffer));
 
     Serial.println("NTU: " + String(NTU));
+
+    delay(PUBLISH_INTERVAL);
+
+    while(analogBufferIndex != SCOUNT) {
+      analogBuffer[analogBufferIndex] = analogRead(tdsSensorPin); //read the analog value and store into the buffer
+      analogBufferIndex++;
+      delay(40); // sample every 40 seconds
+    }
+
+    for (copyIndex = 0; copyIndex < SCOUNT; copyIndex++) {
+        analogBufferTemp[copyIndex] = analogBuffer[copyIndex];
+    }
+    averageVoltage = getMedianNum(analogBufferTemp, SCOUNT) * (float) VREF / 1024.0; // read the analog value more stable by the median filtering algorithm, and convert to voltage value
+    float compensationCoefficient = 1.0 + 0.02 * (temperature - 25.0); //temperature compensation formula: fFinalResult(25^C) = fFinalResult(current)/(1.0+0.02*(fTP-25.0));
+    float compensationVoltage = averageVoltage / compensationCoefficient; //temperature compensation
+    tdsValue = (133.42 * compensationVoltage * compensationVoltage * compensationVoltage - 255.86 * compensationVoltage * compensationVoltage + 857.39 * compensationVoltage) * 0.5; //convert voltage value to tds value
+    //Serial.print("voltage:");
+    //Serial.print(averageVoltage,2);
+    //Serial.print("V ");
+    mqttClient.publish("mendozamartin/feeds/collection-tank-tds", dtostrf(tdsValue, 6, 2, msgBuffer));
+    Serial.print("TDS Value:");
+    Serial.print(tdsValue, 0);
+    Serial.println("ppm");
 }
 
 void loop()
