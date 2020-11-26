@@ -6,44 +6,45 @@
 //*/
 //s
 
-#define TdsSensorPin A1
+#include "WiFiEsp.h"
+#include <PubSubClient.h>
+#include <Timer.h>
+
+#define pressureSensorPin A0
+#define tdsSensorPin A1
+#define turbiditySensorPin A2
 #define VREF 5.0 // analog reference voltage(Volt) of the ADC
 #define SCOUNT 30 // sum of sample point
+
 int analogBuffer[SCOUNT]; // store the analog value in the array, read from ADC
 int analogBufferTemp[SCOUNT];
 int analogBufferIndex = 0, copyIndex = 0;
 float averageVoltage = 0, tdsValue = 0, temperature = 25;
-
-#define pressureSensorPin A0
 int pressureSensorValue = 0;
 float pressureSensorVoltage = 0;
-
-#include "WiFiEsp.h"
-//#include "SAM32WiFiEsp.h"
-
-
-#include <PubSubClient.h>
-
-
-char ssid[] = "Martin!";            // your network SSID (name)
-char pass[] = "martinmendoza";        // your network password
-char ADAFRUIT_IO_USERNAME[] = "mendozanmartin";
-char ADAFRUIT_IO_KEY[] = "aio_HpFX47bwUsrNTWi7Ba2JgnRYFWhe";
+char ssid[] = "martin06m";            // your network SSID (name)
+char pass[] = "mathea06m";        // your network password
+char ADAFRUIT_IO_USERNAME[] = "mendozamartin";
+char ADAFRUIT_IO_KEY[] = "aio_RgNV89f3e96ypESO7erFHcXeq0zv";
 int status = WL_IDLE_STATUS;     // the Wifi radio's status
 
-//char server[] = "io.adafruit.com";
-char server[] = "broker.hivemq.com";
+char server[] = "io.adafruit.com";
+//char server[] = "broker.hivemq.com";
 int port = 1883;
 
 void callback(char* topic, byte* payload, unsigned int length);
-
+void printWifiStatus();
+void reconnect();
 
 // Initialize the Ethernet client object
 WiFiEspClient client;
 PubSubClient mqttClient(server, port, callback,client);
+Timer mqttLoop;
+Timer sensorLoop;
+
 void setup()
 {
-  pinMode(TdsSensorPin, INPUT);
+  pinMode(tdsSensorPin, INPUT);
 
   // initialize serial for debugging
   Serial.begin(115200);
@@ -72,66 +73,108 @@ void setup()
 
   printWifiStatus();
 
-  mqttClient.setBufferSize(1024);
+//  mqttClient.setBufferSize(1024);
 
 //  mqttClient.setServer(server, port);
 //  mqttClient.setCallback(callback);
 
   pinMode(LED_BUILTIN, OUTPUT);
+  mqttLoop.every(1000, mqttConnect);
+  sensorLoop.every(5000, sensorPublish);
 }
 
-void loop()
-{
+void mqttConnect() {
   if (!mqttClient.connected()) {
     reconnect();
   }
 
   mqttClient.loop();
-  delay(1000);
+}
 
-   static unsigned long analogSampleTimepoint = millis();
-  if (millis() - analogSampleTimepoint > 40U) //every 40 milliseconds,read the analog value from the ADC
-  {
-    analogSampleTimepoint = millis();
-    analogBuffer[analogBufferIndex] = analogRead(TdsSensorPin); //read the analog value and store into the buffer
-    analogBufferIndex++;
-    if (analogBufferIndex == SCOUNT)
-      analogBufferIndex = 0;
-  }
-  static unsigned long tdsTimepoint = millis();
-  static unsigned long pressureTimepoint = millis();
-
-  char msgBuffer[20];           // make sure this is big enough to hold your string    
-
-  if (millis() - tdsTimepoint > 5000U) {
-    tdsTimepoint = millis();
-    for (copyIndex = 0; copyIndex < SCOUNT; copyIndex++)
-      analogBufferTemp[copyIndex] = analogBuffer[copyIndex];
-    averageVoltage = getMedianNum(analogBufferTemp, SCOUNT) * (float) VREF / 1024.0; // read the analog value more stable by the median filtering algorithm, and convert to voltage value
-    float compensationCoefficient = 1.0 + 0.02 * (temperature - 25.0); //temperature compensation formula: fFinalResult(25^C) = fFinalResult(current)/(1.0+0.02*(fTP-25.0));
-    float compensationVoltage = averageVoltage / compensationCoefficient; //temperature compensation
-    tdsValue = (133.42 * compensationVoltage * compensationVoltage * compensationVoltage - 255.86 * compensationVoltage * compensationVoltage + 857.39 * compensationVoltage) * 0.5; //convert voltage value to tds value
-    //Serial.print("voltage:");
-    //Serial.print(averageVoltage,2);
-    //Serial.print("V ");
-    mqttClient.publish("TDS-collection", dtostrf(tdsValue, 6, 2, msgBuffer));
-    Serial.print("TDS Value:");
-    Serial.print(tdsValue, 0);
-    Serial.println("ppm");
-  } 
-  
-  if (millis() - pressureTimepoint > 7000U) {
-    pressureTimepoint = millis();
+void sensorPublish() {
+    char msgBuffer[10];           // make sure this is big enough to hold your string    
 
     pressureSensorValue = analogRead(pressureSensorPin);            // read the input on sensor pin
     pressureSensorVoltage = pressureSensorValue * (5.0 / 1023.0);         // Convert the analog reading (which goes from 0 - 1023) to a pressureSensorVoltage (0 - 5V)
-    mqttClient.publish("Pressure-collection", dtostrf(pressureSensorVoltage, 6, 2, msgBuffer));
+    mqttClient.publish("mendozamartin/feeds/collection-tank-level", dtostrf(pressureSensorVoltage, 6, 2, msgBuffer));
     Serial.print("Pressure Sensor Value:");
     Serial.print(pressureSensorVoltage, 0);
     Serial.println("V");  
-  }
+
+    delay(2000);
+
+    int sensorValue = analogRead(A0);// read the input on analog pin 0:
+    float voltage = sensorValue * (5.0 / 1024.0); // Convert the analog reading (which goes from 0 - 1023) to a voltage (0 - 5V):
+//    Serial.println("Voltage: " + String(voltage) + "V");
   
+    float NTU = (-1120.4 * pow(voltage, 2)) + (5742.3*voltage) - 4352.9;
+    mqttClient.publish("mendozamartin/feeds/collection-tank-turbidity", dtostrf(NTU, 6, 2, msgBuffer));
+
+    Serial.println("NTU: " + String(NTU));
 }
+
+void loop()
+{
+  mqttLoop.update();
+  sensorLoop.update();
+//  
+//  static unsigned long analogSampleTimepoint = millis();
+//  if (millis() - analogSampleTimepoint > 40U) //every 40 milliseconds,read the analog value from the ADC
+//  {
+//    analogSampleTimepoint = millis();
+//    analogBuffer[analogBufferIndex] = analogRead(tdsSensorPin); //read the analog value and store into the buffer
+//    analogBufferIndex++;
+//    if (analogBufferIndex == SCOUNT)
+//      analogBufferIndex = 0;
+//  }
+//  static unsigned long tdsTimepoint = millis();
+//  static unsigned long pressureTimepoint = millis();
+//  static unsigned long turbidityTimepoint = millis();
+//
+//  char msgBuffer[10];           // make sure this is big enough to hold your string    
+//
+//  if (millis() - tdsTimepoint > 8000U) {
+//    tdsTimepoint = millis();
+//    for (copyIndex = 0; copyIndex < SCOUNT; copyIndex++)
+//      analogBufferTemp[copyIndex] = analogBuffer[copyIndex];
+//    averageVoltage = getMedianNum(analogBufferTemp, SCOUNT) * (float) VREF / 1024.0; // read the analog value more stable by the median filtering algorithm, and convert to voltage value
+//    float compensationCoefficient = 1.0 + 0.02 * (temperature - 25.0); //temperature compensation formula: fFinalResult(25^C) = fFinalResult(current)/(1.0+0.02*(fTP-25.0));
+//    float compensationVoltage = averageVoltage / compensationCoefficient; //temperature compensation
+//    tdsValue = (133.42 * compensationVoltage * compensationVoltage * compensationVoltage - 255.86 * compensationVoltage * compensationVoltage + 857.39 * compensationVoltage) * 0.5; //convert voltage value to tds value
+//    //Serial.print("voltage:");
+//    //Serial.print(averageVoltage,2);
+//    //Serial.print("V ");
+//    mqttClient.publish("mendozamartin/feeds/collection-tank-tds", dtostrf(tdsValue, 6, 2, msgBuffer));
+//    Serial.print("TDS Value:");
+//    Serial.print(tdsValue, 0);
+//    Serial.println("ppm");
+//  } 
+//  
+//  if (millis() - pressureTimepoint > 5000U) {
+//    pressureTimepoint = millis();
+//
+//    pressureSensorValue = analogRead(pressureSensorPin);            // read the input on sensor pin
+//    pressureSensorVoltage = pressureSensorValue * (5.0 / 1023.0);         // Convert the analog reading (which goes from 0 - 1023) to a pressureSensorVoltage (0 - 5V)
+//    mqttClient.publish("mendozamartin/feeds/collection-tank-level", dtostrf(pressureSensorVoltage, 6, 2, msgBuffer));
+//    Serial.print("Pressure Sensor Value:");
+//    Serial.print(pressureSensorVoltage, 0);
+//    Serial.println("V");  
+//  }
+//
+//  if (millis() - turbidityTimepoint > 11000U) {
+//    turbidityTimepoint = millis();
+//    int sensorValue = analogRead(A0);// read the input on analog pin 0:
+//    float voltage = sensorValue * (5.0 / 1024.0); // Convert the analog reading (which goes from 0 - 1023) to a voltage (0 - 5V):
+//    Serial.println("Voltage: " + String(voltage) + "V");
+//  
+//    float NTU = (-1120.4 * pow(voltage, 2)) + (5742.3*voltage) - 4352.9;
+//    mqttClient.publish("mendozamartin/feeds/collection-tank-turbidity", dtostrf(NTU, 6, 2, msgBuffer));
+//
+//    Serial.println("NTU: " + String(NTU));
+//  }
+}
+
+
 
 
 void printWifiStatus()
@@ -156,8 +199,8 @@ void printWifiStatus()
 void connectToMQTT() {
   String clientId = "ESP8266Client-";
   clientId += String(random(0xffff), HEX);
-//  if(mqttClient.connect(clientId.c_str(), ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEY)) {
-  if (mqttClient.connect(clientId.c_str())) {
+  if(mqttClient.connect(clientId.c_str(), ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEY)) {
+//  if (mqttClient.connect(clientId.c_str())) {
     Serial.print("Connected to: ");
     Serial.println(server);
   } else {
@@ -167,11 +210,9 @@ void connectToMQTT() {
     delay(2000);
   }
 
-//  boolean isSubscribed = mqttClient.subscribe("mendozanmartin/feeds/outlet-valve", 1);
-  boolean isSubscribed = mqttClient.subscribe("outlet-valve", 1);
-  boolean isSubscribed2 = mqttClient.subscribe("inlet-valve", 1);
+  boolean isSubscribed = mqttClient.subscribe("mendozamartin/feeds/outlet-valve", 1);
+  boolean isSubscribed2 = mqttClient.subscribe("mendozamartin/feeds/inlet-valve", 1);
 
-  mqttClient.publish("TDS-collection", "40");
   if (isSubscribed) {
     Serial.println("MQTT client is subscribed to topic");
   } else {
