@@ -1,4 +1,4 @@
-int signalPin = 7;
+int flowSensorPin = 7;
 float VREF = 5.0; // analog reference
 bool pulseSignal, lastPulseSignal = false;
 int pulseCount = 0;
@@ -10,13 +10,13 @@ unsigned long initial_t = 0;
 void setup() {
   Serial.begin(115200);
   // put your setup code here to run once:
-  pinMode(signalPin, INPUT);
+  pinMode(flowSensorPin, INPUT);
 }
 
 void loop() {
   // put your main code here to run repeatedly:
   
-  pulseSignal = digitalRead(signalPin);
+  pulseSignal = digitalRead(flowSensorPin);
   if (pulseSignal != lastPulseSignal && pulseSignal == true) {
     pulseCount++;
   }

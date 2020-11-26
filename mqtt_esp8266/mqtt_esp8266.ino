@@ -13,9 +13,11 @@
 #define pressureSensorPin A0
 #define tdsSensorPin A1
 #define turbiditySensorPin A2
+#define flowSensorPin A3
 #define VREF 5.0 // analog reference voltage(Volt) of the ADC
 #define SCOUNT 30 // sum of sample point
 
+bool pulseSignal, lastPulseSignal = false;
 int analogBuffer[SCOUNT]; // store the analog value in the array, read from ADC
 int analogBufferTemp[SCOUNT];
 int analogBufferIndex = 0, copyIndex = 0;
@@ -25,8 +27,14 @@ float pressureSensorVoltage = 0;
 char ssid[] = "Martin!";            // your network SSID (name)
 char pass[] = "martinmendoza";        // your network password
 char ADAFRUIT_IO_USERNAME[] = "mendozamartin";
-char ADAFRUIT_IO_KEY[] = "aio_xqXA45Lsc2EbsSVzoL9TNb1GN1ZF";
+char ADAFRUIT_IO_KEY[] = "aio_vKgA83zgVPtzZSJoOCg13HpCljRl";
 int status = WL_IDLE_STATUS;     // the Wifi radio's status
+
+int pulseCount = 0;
+float flowRate = 0;
+int countArray[5] = {0,0,0,0,0};
+unsigned long delta_t, final_t;
+unsigned long initial_t = 0;
 
 char server[] = "io.adafruit.com";
 //char server[] = "broker.hivemq.com";
@@ -36,16 +44,21 @@ void callback(char* topic, byte* payload, unsigned int length);
 void printWifiStatus();
 void reconnect();
 
+int j = 0;
+
 // Initialize the Ethernet client object
 WiFiEspClient client;
 PubSubClient mqttClient(server, port, callback,client);
 Timer mqttLoop;
 Timer sensorLoop;
-int PUBLISH_INTERVAL = 3500;
+int PUBLISH_INTERVAL = 2000;
 
 void setup()
 {
   pinMode(tdsSensorPin, INPUT);
+  pinMode(turbiditySensorPin, INPUT);
+  pinMode(flowSensorPin, INPUT);
+  pinMode(pressureSensorPin, INPUT);
 
   // initialize serial for debugging
   Serial.begin(115200);
@@ -81,7 +94,7 @@ void setup()
 
   pinMode(LED_BUILTIN, OUTPUT);
   mqttLoop.every(1000, mqttConnect);
-  sensorLoop.every(PUBLISH_INTERVAL*3, sensorPublish);
+  sensorLoop.every((PUBLISH_INTERVAL*4 + 3), sensorPublish); // give it extra 2 seconds so that function calls do not overlap
 }
 
 void mqttConnect() {
@@ -90,6 +103,27 @@ void mqttConnect() {
   }
 
   mqttClient.loop();
+}
+
+int getMedianNum(int bArray[], int iFilterLen) {
+  int bTab[iFilterLen];
+  for (byte i = 0; i < iFilterLen; i++)
+    bTab[i] = bArray[i];
+  int i, j, bTemp;
+  for (j = 0; j < iFilterLen - 1; j++) {
+    for (i = 0; i < iFilterLen - j - 1; i++) {
+      if (bTab[i] > bTab[i + 1]) {
+        bTemp = bTab[i];
+        bTab[i] = bTab[i + 1];
+        bTab[i + 1] = bTemp;
+      }
+    }
+  }
+  if ((iFilterLen & 1) > 0)
+    bTemp = bTab[(iFilterLen - 1) / 2];
+  else
+    bTemp = (bTab[iFilterLen / 2] + bTab[iFilterLen / 2 - 1]) / 2;
+  return bTemp;
 }
 
 void sensorPublish() {
@@ -101,18 +135,16 @@ void sensorPublish() {
     Serial.print("Pressure Sensor Value:");
     Serial.print(pressureSensorVoltage, 0);
     Serial.println("V");  
-
+/////////////////////////////////////////////////////////////////////////////////////////
     delay(PUBLISH_INTERVAL);
 
     int sensorValue = analogRead(A0);// read the input on analog pin 0:
-    float voltage = sensorValue * (5.0 / 1024.0); // Convert the analog reading (which goes from 0 - 1023) to a voltage (0 - 5V):
-//    Serial.println("Voltage: " + String(voltage) + "V");
-  
+    float voltage = sensorValue * (5.0 / 1024.0); // Convert the analog reading (which goes from 0 - 1023) to a voltage (0 - 5V):  
     float NTU = (-1120.4 * pow(voltage, 2)) + (5742.3*voltage) - 4352.9;
     mqttClient.publish("mendozamartin/feeds/collection-tank-turbidity", dtostrf(NTU, 6, 2, msgBuffer));
 
     Serial.println("NTU: " + String(NTU));
-
+////////////////////////////////////////////////////////////////////////////////////////
     delay(PUBLISH_INTERVAL);
 
     while(analogBufferIndex != SCOUNT) {
@@ -135,67 +167,50 @@ void sensorPublish() {
     Serial.print("TDS Value:");
     Serial.print(tdsValue, 0);
     Serial.println("ppm");
+
+/////////////////////////////////////////////////////////////////////////////////////////
+    delay(PUBLISH_INTERVAL);
+    int pulseCount = 0;
+    Serial.println("This executed");
+    for (int i = 0; i < 4; i++) {
+      pulseCount += countArray[i];
+    }
+      Serial.println("Pulse Count: " + String(pulseCount));
+      Serial.println("Flow Rate delta t: " + String(10000) + "ms"); // 10 elements in array, each containing 2 seconds of pulse data
+      flowRate = (pulseCount/425.0) / (10000 * pow(10, -3) / 60.0);
+      Serial.println("Flow Rate: " + String(flowRate) + " L/min");
+
+      mqttClient.publish("mendozamartin/feeds/inlet-flowrate", dtostrf(flowRate, 6, 2, msgBuffer));
 }
 
 void loop()
 {
   mqttLoop.update();
   sensorLoop.update();
-//  
-//  static unsigned long analogSampleTimepoint = millis();
-//  if (millis() - analogSampleTimepoint > 40U) //every 40 milliseconds,read the analog value from the ADC
-//  {
-//    analogSampleTimepoint = millis();
-//    analogBuffer[analogBufferIndex] = analogRead(tdsSensorPin); //read the analog value and store into the buffer
-//    analogBufferIndex++;
-//    if (analogBufferIndex == SCOUNT)
-//      analogBufferIndex = 0;
-//  }
-//  static unsigned long tdsTimepoint = millis();
-//  static unsigned long pressureTimepoint = millis();
-//  static unsigned long turbidityTimepoint = millis();
-//
-//  char msgBuffer[10];           // make sure this is big enough to hold your string    
-//
-//  if (millis() - tdsTimepoint > 8000U) {
-//    tdsTimepoint = millis();
-//    for (copyIndex = 0; copyIndex < SCOUNT; copyIndex++)
-//      analogBufferTemp[copyIndex] = analogBuffer[copyIndex];
-//    averageVoltage = getMedianNum(analogBufferTemp, SCOUNT) * (float) VREF / 1024.0; // read the analog value more stable by the median filtering algorithm, and convert to voltage value
-//    float compensationCoefficient = 1.0 + 0.02 * (temperature - 25.0); //temperature compensation formula: fFinalResult(25^C) = fFinalResult(current)/(1.0+0.02*(fTP-25.0));
-//    float compensationVoltage = averageVoltage / compensationCoefficient; //temperature compensation
-//    tdsValue = (133.42 * compensationVoltage * compensationVoltage * compensationVoltage - 255.86 * compensationVoltage * compensationVoltage + 857.39 * compensationVoltage) * 0.5; //convert voltage value to tds value
-//    //Serial.print("voltage:");
-//    //Serial.print(averageVoltage,2);
-//    //Serial.print("V ");
-//    mqttClient.publish("mendozamartin/feeds/collection-tank-tds", dtostrf(tdsValue, 6, 2, msgBuffer));
-//    Serial.print("TDS Value:");
-//    Serial.print(tdsValue, 0);
-//    Serial.println("ppm");
-//  } 
-//  
-//  if (millis() - pressureTimepoint > 5000U) {
-//    pressureTimepoint = millis();
-//
-//    pressureSensorValue = analogRead(pressureSensorPin);            // read the input on sensor pin
-//    pressureSensorVoltage = pressureSensorValue * (5.0 / 1023.0);         // Convert the analog reading (which goes from 0 - 1023) to a pressureSensorVoltage (0 - 5V)
-//    mqttClient.publish("mendozamartin/feeds/collection-tank-level", dtostrf(pressureSensorVoltage, 6, 2, msgBuffer));
-//    Serial.print("Pressure Sensor Value:");
-//    Serial.print(pressureSensorVoltage, 0);
-//    Serial.println("V");  
-//  }
-//
-//  if (millis() - turbidityTimepoint > 11000U) {
-//    turbidityTimepoint = millis();
-//    int sensorValue = analogRead(A0);// read the input on analog pin 0:
-//    float voltage = sensorValue * (5.0 / 1024.0); // Convert the analog reading (which goes from 0 - 1023) to a voltage (0 - 5V):
-//    Serial.println("Voltage: " + String(voltage) + "V");
-//  
-//    float NTU = (-1120.4 * pow(voltage, 2)) + (5742.3*voltage) - 4352.9;
-//    mqttClient.publish("mendozamartin/feeds/collection-tank-turbidity", dtostrf(NTU, 6, 2, msgBuffer));
-//
-//    Serial.println("NTU: " + String(NTU));
-//  }
+
+  pulseSignal = digitalRead(flowSensorPin);
+  if (pulseSignal != lastPulseSignal && pulseSignal == true) {
+    pulseCount++;
+  }
+  lastPulseSignal = pulseSignal;
+
+  final_t = millis();
+  delta_t = final_t - initial_t;
+
+  if (delta_t >= 2000) {
+   
+  countArray[j] = pulseCount;
+  Serial.println(countArray[j]);
+  pulseCount = 0;
+
+   if (j == 4) {
+      j = 0;
+    }
+    
+   j++;
+
+  initial_t = final_t;
+}
 }
 
 
@@ -271,25 +286,4 @@ void callback(char* topic, byte* payload, unsigned int length) {
   digitalWrite(LED_BUILTIN, LOW);
   }
 
-}
-
-int getMedianNum(int bArray[], int iFilterLen) {
-  int bTab[iFilterLen];
-  for (byte i = 0; i < iFilterLen; i++)
-    bTab[i] = bArray[i];
-  int i, j, bTemp;
-  for (j = 0; j < iFilterLen - 1; j++) {
-    for (i = 0; i < iFilterLen - j - 1; i++) {
-      if (bTab[i] > bTab[i + 1]) {
-        bTemp = bTab[i];
-        bTab[i] = bTab[i + 1];
-        bTab[i + 1] = bTemp;
-      }
-    }
-  }
-  if ((iFilterLen & 1) > 0)
-    bTemp = bTab[(iFilterLen - 1) / 2];
-  else
-    bTemp = (bTab[iFilterLen / 2] + bTab[iFilterLen / 2 - 1]) / 2;
-  return bTemp;
 }
