@@ -7,7 +7,7 @@
 git pull https://github.com/mendozanmartin/Capstone-Project.git
 ```
 
-To be able to access the libraries that are used for this project, please follow the instructions below.
+To be able to access the libraries that are used for this project, ensure that the sketchbook
 
-![Arduino Preferences](Capstone-Instruction-Image.png)
+![Arduino Preferences](Capstone%20Instruction%20Image.png)
 
