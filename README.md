@@ -15,7 +15,7 @@ The objective of the WaSH Smart Tank project is to develop an end-to-end water f
 git pull https://github.com/mendozanmartin/Capstone-Project.git
 ```
 
-To be able to access the libraries that are used for this project, ensure that the sketchbook
+To be able to access the libraries that are used for this project, ensure that the sketchbook location is set to the directory below.
 
 ![Arduino Preferences](Capstone%20Instruction%20Image.png)
 
