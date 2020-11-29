@@ -16,9 +16,9 @@
 SoftwareSerial Serial1(6, 7); // RX, TX
 #endif
 
-char ssid[] = "Twim";            // your network SSID (name)
-char pass[] = "12345678";        // your network password
-int status = WL_IDLE_STATUS;     // the Wifi radio's status
+char ssid[] = "Twim";        // your network SSID (name)
+char pass[] = "12345678";    // your network password
+int status = WL_IDLE_STATUS; // the Wifi radio's status
 
 void setup()
 {
@@ -30,14 +30,17 @@ void setup()
   WiFi.init(&Serial1);
 
   // check for the presence of the shield
-  if (WiFi.status() == WL_NO_SHIELD) {
+  if (WiFi.status() == WL_NO_SHIELD)
+  {
     Serial.println("WiFi shield not present");
     // don't continue
-    while (true);
+    while (true)
+      ;
   }
 
   // attempt to connect to WiFi network
-  while ( status != WL_CONNECTED) {
+  while (status != WL_CONNECTED)
+  {
     Serial.print("Attempting to connect to WPA SSID: ");
     Serial.println(ssid);
     // Connect to WPA/WPA2 network
@@ -53,7 +56,7 @@ void loop()
   Serial.println();
   printCurrentNet();
   printWifiData();
-  
+
   delay(10000);
 }
 
