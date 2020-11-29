@@ -57,7 +57,7 @@ void setup()
   Serial1.begin(115200);
 
   simpleWifi.init(&Serial1, server, port, callback);
-  // simpleWifi.connectToWifi(&Serial1, ssid, pass);
+  simpleWifi.connectToWifi(ssid, pass);
 
   pinMode(LED_BUILTIN, OUTPUT);
   mqttLoop.every(1000, mqttConnect);
