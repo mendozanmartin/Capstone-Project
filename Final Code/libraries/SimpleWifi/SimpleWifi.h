@@ -1,5 +1,5 @@
 /*
-  Configuration.h - Header file for Storing Configuration Variables for the WaSh SMART Water Tank.
+  SimpleWifi.h - Header file that contains class declarations for SimpleWifi.cpp
   Created by Martin Mendoza, November 26, 2020
   Released into the public domain.
 */

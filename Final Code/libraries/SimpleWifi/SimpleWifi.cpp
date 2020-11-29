@@ -1,7 +1,7 @@
 /*
-  Wifi.cpp - A simple client for MQTT.
-  Nick O'Leary
-  http://knolleary.net
+  SimpleWifi.cpp a wrapper for WifiEsp and PubSubClient for MQTT.
+  Martin Mendoza
+  martinmendoza.ca
 */
 
 #include "SimpleWifi.h"
