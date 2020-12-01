@@ -44,6 +44,7 @@ Timer mqttLoop;
 Timer sensorLoop;
 int PUBLISH_INTERVAL = 2000;
 SimpleWifi simpleWifi;
+
 void setup()
 {
   pinMode(tdsSensorPin, INPUT);
