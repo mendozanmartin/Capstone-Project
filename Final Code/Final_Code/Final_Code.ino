@@ -178,33 +178,6 @@ void loop()
 {
   mqttLoop.update();
   sensorLoop.update();
-
-  pulseSignal = digitalRead(flowSensorPin);
-  if (pulseSignal != lastPulseSignal && pulseSignal == true)
-  {
-    pulseCount++;
-  }
-  lastPulseSignal = pulseSignal;
-
-  final_t = millis();
-  delta_t = final_t - initial_t;
-
-  if (delta_t >= 2000)
-  {
-
-    countArray[j] = pulseCount;
-    Serial.println(countArray[j]);
-    pulseCount = 0;
-
-    if (j == 4)
-    {
-      j = 0;
-    }
-
-    j++;
-
-    initial_t = final_t;
-  }
 }
 
 void callback(char *topic, byte *payload, unsigned int length)
