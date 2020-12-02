@@ -7,10 +7,16 @@
                 "/Users/mendozam/Documents/Arduino/Capstone_Project/Final Code/libraries/**",
                 "/Applications/Arduino.app/Contents/Java/libraries/**",
                 "/Applications/Arduino.app/Contents/Java/hardware/tools/**",
-                "/Applications/Arduino.app/Contents/Java/hardware/arduino/avr/**"
+                "/Applications/Arduino.app/Contents/Java/hardware/arduino/avr/**",
+                "C:\\Users\\771er\\OneDrive\\Documents\\arduino-1.8.13-windows\\arduino-1.8.13\\hardware\\arduino\\avr\\**",
+                "C:\\Users\\771er\\OneDrive\\Documents\\arduino-1.8.13-windows\\arduino-1.8.13\\hardware\\tools\\**",
+                "C:\\Users\\771er\\OneDrive\\Documents\\arduino-1.8.13-windows\\arduino-1.8.13\\libraries\\**",
+                "C:\\Users\\771er\\Documents\\Capstone-Project\\Final Code\\libraries\\**",
+                "C:\\Users\\771er\\OneDrive\\Documents\\arduino-1.8.13-windows\\arduino-1.8.13\\tools\\**"
             ],
             "forcedInclude": [
-                "/Applications/Arduino.app/Contents/Java/hardware/arduino/avr/cores/arduino/Arduino.h"
+                "/Applications/Arduino.app/Contents/Java/hardware/arduino/avr/cores/arduino/Arduino.h",
+                "C:\\Users\\771er\\OneDrive\\Documents\\arduino-1.8.13-windows\\arduino-1.8.13\\hardware\\arduino\\avr\\cores\\arduino\\Arduino.h"
             ],
             "defines": [
                 "USBCON"
