@@ -1,6 +1,6 @@
 
-#ifndef TdsSensor_h
-#define TdsSensor_h
+#ifndef LevelSensor_h
+#define LevelSensor_h
 
 #include "Arduino.h"
 #include <stdio.h> //for printing to the serial monitor. Use key word 'Serial'
@@ -9,20 +9,15 @@
 #define VREF 5.0 // analog reference voltage(Volt) of the ADC
 #define TEMPERATURE 25
 
-class TdsSensor
+class LevelSensor
 {
 
 public:
-    TdsSensor(uint8_t analogPin);
+    LevelSensor(uint8_t analogPin);
     float getReading(void);
-    int getMedianNum(int bArray[], int iFilterLen);
-    void startSampling(void);
 
 private:
-    int analogBuffer[SCOUNT];
-    int analogBufferTemp[SCOUNT];
-    float reading;
-    float tdsValue;
     uint8_t analogPin;
+    float level;
 };
 #endif

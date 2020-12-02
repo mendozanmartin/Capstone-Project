@@ -1,6 +1,10 @@
 
 #include "Configuration.h"
 #include "SimpleWifi.h"
+#include "TdsSensor.h"
+#include "LevelSensor.h"
+#include "TurbidityLib.h"
+#include "ValveControlLib.h"
 
 #include <Timer.h>
 
@@ -22,12 +26,8 @@ int port = MQTT_PORT;
 // int status = WL_IDLE_STATUS; // the Wifi radio's status
 
 bool pulseSignal, lastPulseSignal = false;
-int analogBuffer[SCOUNT]; // store the analog value in the array, read from ADC
-int analogBufferTemp[SCOUNT];
-int analogBufferIndex = 0, copyIndex = 0;
-float averageVoltage = 0, tdsValue = 0, temperature = 25;
-int pressureSensorValue = 0;
-float pressureSensorVoltage = 0;
+float tdsValue = 0;
+float levelSensorValue = 0;
 
 int pulseCount = 0;
 float flowRate = 0;
@@ -44,6 +44,11 @@ Timer mqttLoop;
 Timer sensorLoop;
 int PUBLISH_INTERVAL = 2000;
 SimpleWifi simpleWifi;
+
+//Sensors Declaration
+TdsSensor tdsSensor(tdsSensorPin);
+LevelSensor levelSensor(pressureSensorPin);
+TurbidityLib turbiditySensor(turbiditySensor);
 
 void setup()
 {
@@ -117,46 +122,21 @@ void sensorPublish()
 {
   char msgBuffer[10]; // make sure this is big enough to hold your string
 
-  pressureSensorValue = analogRead(pressureSensorPin);          // read the input on sensor pin
-  pressureSensorVoltage = pressureSensorValue * (5.0 / 1023.0); // Convert the analog reading (which goes from 0 - 1023) to a pressureSensorVoltage (0 - 5V)
-  simpleWifi.mqttPublish("mendozamartin/feeds/collection-tank-level", dtostrf(pressureSensorVoltage, 6, 2, msgBuffer));
-  Serial.print("Pressure Sensor Value:");
-  Serial.print(pressureSensorVoltage, 0);
-  Serial.println("V");
+  levelSensorValue = levelSensor.getReading();
+  simpleWifi.mqttPublish("mendozamartin/feeds/collection-tank-level", dtostrf(levelSensorValue, 6, 2, msgBuffer));
+
   /////////////////////////////////////////////////////////////////////////////////////////
   delay(PUBLISH_INTERVAL);
-
-  int sensorValue = analogRead(A0);             // read the input on analog pin 0:
-  float voltage = sensorValue * (5.0 / 1024.0); // Convert the analog reading (which goes from 0 - 1023) to a voltage (0 - 5V):
-  float NTU = (-1120.4 * pow(voltage, 2)) + (5742.3 * voltage) - 4352.9;
+  turbiditySensor.startSampling();
+  float NTU = turbiditySensor.getReading(); // read the input on analog pin 0:
   simpleWifi.mqttPublish("mendozamartin/feeds/collection-tank-turbidity", dtostrf(NTU, 6, 2, msgBuffer));
 
-  Serial.println("NTU: " + String(NTU));
   ////////////////////////////////////////////////////////////////////////////////////////
   delay(PUBLISH_INTERVAL);
 
-  while (analogBufferIndex != SCOUNT)
-  {
-    analogBuffer[analogBufferIndex] = analogRead(tdsSensorPin); //read the analog value and store into the buffer
-    analogBufferIndex++;
-    delay(40); // sample every 40 milliseconds
-  }
-
-  for (copyIndex = 0; copyIndex < SCOUNT; copyIndex++)
-  {
-    analogBufferTemp[copyIndex] = analogBuffer[copyIndex];
-  }
-  averageVoltage = getMedianNum(analogBufferTemp, SCOUNT) * (float)VREF / 1024.0;                                                                                                  // read the analog value more stable by the median filtering algorithm, and convert to voltage value
-  float compensationCoefficient = 1.0 + 0.02 * (temperature - 25.0);                                                                                                               //temperature compensation formula: fFinalResult(25^C) = fFinalResult(current)/(1.0+0.02*(fTP-25.0));
-  float compensationVoltage = averageVoltage / compensationCoefficient;                                                                                                            //temperature compensation
-  tdsValue = (133.42 * compensationVoltage * compensationVoltage * compensationVoltage - 255.86 * compensationVoltage * compensationVoltage + 857.39 * compensationVoltage) * 0.5; //convert voltage value to tds value
-  //Serial.print("voltage:");
-  //Serial.print(averageVoltage,2);
-  //Serial.print("V ");
+  tdsSensor.startSampling();
+  tdsValue = tdsSensor.getReading();
   simpleWifi.mqttPublish("mendozamartin/feeds/collection-tank-tds", dtostrf(tdsValue, 6, 2, msgBuffer));
-  Serial.print("TDS Value:");
-  Serial.print(tdsValue, 0);
-  Serial.println("ppm");
 
   /////////////////////////////////////////////////////////////////////////////////////////
   delay(PUBLISH_INTERVAL);
