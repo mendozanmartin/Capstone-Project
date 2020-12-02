@@ -3,6 +3,7 @@
 #include "SimpleWifi.h"
 #include "TdsSensor.h"
 #include "LevelSensor.h"
+#include "TurbidityLib.h"
 
 #include <Timer.h>
 
@@ -46,6 +47,7 @@ SimpleWifi simpleWifi;
 //Sensors Declaration
 TdsSensor tdsSensor(tdsSensorPin);
 LevelSensor levelSensor(pressureSensorPin);
+TurbidityLib turbiditySensor(turbiditySensor);
 
 void setup()
 {
@@ -124,13 +126,10 @@ void sensorPublish()
 
   /////////////////////////////////////////////////////////////////////////////////////////
   delay(PUBLISH_INTERVAL);
-
-  int sensorValue = analogRead(A0);             // read the input on analog pin 0:
-  float voltage = sensorValue * (5.0 / 1024.0); // Convert the analog reading (which goes from 0 - 1023) to a voltage (0 - 5V):
-  float NTU = (-1120.4 * pow(voltage, 2)) + (5742.3 * voltage) - 4352.9;
+  turbiditySensor.startSampling();
+  float NTU = turbiditySensor.getReading(); // read the input on analog pin 0:
   simpleWifi.mqttPublish("mendozamartin/feeds/collection-tank-turbidity", dtostrf(NTU, 6, 2, msgBuffer));
 
-  Serial.println("NTU: " + String(NTU));
   ////////////////////////////////////////////////////////////////////////////////////////
   delay(PUBLISH_INTERVAL);
 

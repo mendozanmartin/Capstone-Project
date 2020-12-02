@@ -3,6 +3,7 @@
 #define TdsSensor_h
 
 #include "Arduino.h"
+#include <stdio.h> //for printing to the serial monitor. Use key word 'Serial'
 
 #define SCOUNT 30
 #define VREF 5.0 // analog reference voltage(Volt) of the ADC
@@ -15,7 +16,7 @@ public:
     TdsSensor(uint8_t analogPin);
     float getReading(void);
     int getMedianNum(int bArray[], int iFilterLen);
-    void startSampling();
+    void startSampling(void);
 
 private:
     int analogBuffer[SCOUNT];
