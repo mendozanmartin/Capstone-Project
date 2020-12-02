@@ -4,7 +4,7 @@
 #include "TdsSensor.h"
 #include "LevelSensor.h"
 #include "TurbidityLib.h"
-#include "ValveControl.h"
+#include "ValveControlLib.h"
 
 #include <Timer.h>
 
