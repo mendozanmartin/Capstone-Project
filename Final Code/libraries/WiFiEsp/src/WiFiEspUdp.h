@@ -21,7 +21,7 @@ along with The Arduino WiFiEsp library.  If not, see
 
 #include <Udp.h>
 
-#define UDP_TX_PACKET_MAX_SIZE 36
+#define UDP_TX_PACKET_MAX_SIZE 72
 
 class WiFiEspUDP : public UDP
 {

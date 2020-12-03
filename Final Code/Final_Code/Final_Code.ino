@@ -27,6 +27,7 @@ void reconnect();
 
 float LEVEL_THRESHOLD = 10;
 int PUBLISH_INTERVAL = 2000;
+int valveState = 1;
 
 //Timer declaration
 Timer mqttLoop;
@@ -41,6 +42,8 @@ LevelSensor levelSensor(pressureSensorPin);
 TurbidityLib turbiditySensor(turbiditySensorPin);
 FlowMeter flowSensor(flowSensorPin);
 ValveCtrl valve(inletValvePin);
+
+int AUTOMATIC_MODE = 1; // set arduino to automatic mode first
 
 void setup()
 {
@@ -70,16 +73,34 @@ void mqttConnect()
   while (!simpleWifi.mqttConnected())
   {
     simpleWifi.connectToMqtt(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEY, server);
+    boolean valveSubscription = 0;
+    boolean modeSubscription = 0;
 
-    boolean isSubscribed = simpleWifi.mqttSubscribe("mendozamartin/feeds/outlet-valve", 1);
+    if (AUTOMATIC_MODE == 1) { // this will prevent users from operating the valves in the dashboard
+      modeSubscription = simpleWifi.mqttSubscribe("mendozamartin/feeds/automatic-mode", 1);
+      simpleWifi.mqttPublish("mendozamartin/feeds/automatic-mode", "ON");
+    } else { // this will allow the user to operate the valves in the dashboard
+      valveSubscription = simpleWifi.mqttSubscribe("mendozamartin/feeds/outlet-valve", 1);
+      modeSubscription = simpleWifi.mqttSubscribe("mendozamartin/feeds/automatic-mode", 1);
+      simpleWifi.mqttPublish("mendozamartin/feeds/automatic-mode", "OFF");
+    }
 
-    if (isSubscribed)
+    if (valveSubscription) // check if arduino client is subscribed to valve topic
     {
-      Serial.println("MQTT client is subscribed to topic");
+      Serial.println("MQTT client is subscribed to valve topic");
     }
     else
     {
-      Serial.println("MQTT client is not subscribed to topic");
+      Serial.println("MQTT client is not subscribed to valve topic");
+    }
+
+    if (modeSubscription) // check if arduino client is subscribed to valve topic
+    {
+      Serial.println("MQTT client is subscribed to mode topic");
+    }
+    else
+    {
+      Serial.println("MQTT client is not subscribed to mode topic");
     }
   }
 
@@ -87,16 +108,18 @@ void mqttConnect()
 }
 
 void controlValve()
-{
-  if (levelSensor.getReading() >= LEVEL_THRESHOLD)
-  {
-    valve.closeValve();
-    simpleWifi.mqttPublish("mendozamartin/feeds/outlet-valve", "OFF");
-  }
-  else
-  {
-    valve.openValve();
-    simpleWifi.mqttPublish("mendozamartin/feeds/outlet-valve", "ON");
+{ 
+  if (AUTOMATIC_MODE == 1) { // execute logic when system is in automatic mode
+    if (levelSensor.getReading() >= LEVEL_THRESHOLD)
+    {
+      valve.closeValve();
+      simpleWifi.mqttPublish("mendozamartin/feeds/outlet-valve", "OFF");
+    }
+    else
+    {
+      valve.openValve();
+      simpleWifi.mqttPublish("mendozamartin/feeds/outlet-valve", "ON");
+    }
   }
 }
 
@@ -141,19 +164,32 @@ void callback(char *topic, byte *payload, unsigned int length)
   Serial.println("] ");
 
   char message[length];
-  for (int i = 0; i < length; i++)
+  for (int i = 0; i < length; i++) // loop bytes from payload and place into char array
   {
     message[i] = payload[i];
   }
-  Serial.println(message[1]);
-  if (message[1] == 'N')
-  {
-    Serial.println(message);
-    valve.openValve();
+  if (topic == "mendozamartin/feeds/outlet-valve") {
+    if (message[1] == 'N')
+    {
+      Serial.println(message);
+      valve.openValve();
+    }
+    else if (message[1] == 'F')
+    {
+      Serial.println(message);
+      valve.closeValve();
+    }
+  } else if (topic == "mendozamartin/feeds/automatic-mode") {
+    if (message[1] == 'N')
+    {
+      Serial.println(message);
+      AUTOMATIC_MODE = 1;
+    }
+    else if (message[1] == 'F')
+    {
+      Serial.println(message);
+      AUTOMATIC_MODE = 0;
+    }
   }
-  else if (message[1] == 'F')
-  {
-    Serial.println(message);
-    valve.closeValve();
-  }
+
 }

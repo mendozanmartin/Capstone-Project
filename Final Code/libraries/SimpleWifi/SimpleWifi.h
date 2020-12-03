@@ -22,6 +22,7 @@ public:
   boolean publishMessage(const char *topic, const char *payload);
   boolean mqttConnected(void);
   boolean mqttSubscribe(const char *topic, uint8_t qos);
+  boolean mqttUnsubscribe(const char *topic);
   void mqttPublish(const char *topic, const char *payload);
   void printWifiStatus();
   void connectToMqtt(const char *adafruitUsername, const char *adafruitKey, const char *server);

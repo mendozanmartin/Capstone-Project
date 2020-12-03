@@ -37,7 +37,7 @@ along with The Arduino WiFiEsp library.  If not, see
 #define WL_NETWORKS_LIST_MAXNUM 10
 
 // Maxmium number of socket
-#define MAX_SOCK_NUM 6
+#define MAX_SOCK_NUM 12
 
 // Socket not available constant
 #define SOCK_NOT_AVAIL 255
@@ -50,7 +50,7 @@ along with The Arduino WiFiEsp library.  If not, see
 #define NO_SOCKET_AVAIL 255
 
 // maximum size of AT command
-#define CMD_BUFFER_SIZE 256
+#define CMD_BUFFER_SIZE 512
 
 typedef enum eProtMode
 {
