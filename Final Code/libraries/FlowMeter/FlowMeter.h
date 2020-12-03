@@ -8,6 +8,7 @@
 #define FlowMeter_h
 
 #include "Arduino.h"
+#include <stdio.h>
 
 class FlowMeter
 {

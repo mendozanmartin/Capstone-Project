@@ -11,12 +11,12 @@ FlowMeter::FlowMeter(uint8_t digitalPin)
     this->arrayCount = 0;
     this->pulseCount = 0;
     this->lastPulseSignal = 0;
+    unsigned long delta_t, final_t, initial_t = 0;
 }
 
 void FlowMeter::flowSampling()
 {
-    unsigned long delta_t, final_t, initial_t = 0;
-
+    
     this->pulseSignal = digitalRead(this->digitalPin);
     if (this->pulseSignal != this->lastPulseSignal && this->pulseSignal == true)
     {
@@ -33,12 +33,13 @@ void FlowMeter::flowSampling()
         this->countArray[this->arrayCount] = this->pulseCount;
         this->pulseCount = 0;
 
-        if (this->arrayCount == 4)
+        this->arrayCount++;
+
+        if (this->arrayCount == 5)
         {
             this->arrayCount = 0;
         }
 
-        this->arrayCount++;
 
         initial_t = final_t;
     }
@@ -49,7 +50,7 @@ float FlowMeter::getReading()
     int totalPulses = 0;
     for (int i = 0; i < 4; i++)
     {
-        pulseCount += this->countArray[i];
+        totalPulses += this->countArray[i];
     }
     Serial.println("Pulse Count: " + String(totalPulses));
     Serial.println("Flow Rate delta t: " + String(10000) + "ms"); // 10 elements in array, each containing 2 seconds of pulse data
