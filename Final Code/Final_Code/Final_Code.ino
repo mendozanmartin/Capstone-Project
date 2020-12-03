@@ -12,7 +12,7 @@
 #define pressureSensorPin A0
 #define tdsSensorPin A1
 #define turbiditySensorPin A2
-#define flowSensorPin A3
+#define flowSensorPin 8
 
 #define VREF 5.0  // analog reference voltage(Volt) of the ADC
 #define SCOUNT 30 // sum of sample point
@@ -69,7 +69,9 @@ void setup()
 
   pinMode(LED_BUILTIN, OUTPUT);
   mqttLoop.every(1000, mqttConnect);
-  sensorLoop.every((PUBLISH_INTERVAL * 4 + 3), sensorPublish); // give it extra 2 seconds so that function calls do not overlap
+  // sensorLoop.every((PUBLISH_INTERVAL * 4 + 3), sensorPublish); // give it extra 2 seconds so that function calls do not overlap
+    sensorLoop.every((PUBLISH_INTERVAL), sensorPublish); // give it extra 2 seconds so that function calls do not overlap
+
 }
 
 void mqttConnect()
@@ -104,10 +106,10 @@ void sensorPublish()
   // simpleWifi.mqttPublish("mendozamartin/feeds/collection-tank-level", dtostrf(levelSensorValue, 6, 2, msgBuffer));
 
   /////////////////////////////////////////////////////////////////////////////////////////
-  delay(PUBLISH_INTERVAL);
-  turbiditySensor.startSampling();
-  float NTU = turbiditySensor.getReading(); // read the input on analog pin 0:
-  simpleWifi.mqttPublish("mendozamartin/feeds/collection-tank-turbidity", dtostrf(NTU, 6, 2, msgBuffer));
+  // delay(PUBLISH_INTERVAL);
+  // turbiditySensor.startSampling();
+  // float NTU = turbiditySensor.getReading(); // read the input on analog pin 0:
+  // simpleWifi.mqttPublish("mendozamartin/feeds/collection-tank-turbidity", dtostrf(NTU, 6, 2, msgBuffer));
   
   ////////////////////////////////////////////////////////////////////////////////////////
   // delay(PUBLISH_INTERVAL);
@@ -118,8 +120,8 @@ void sensorPublish()
 
   /////////////////////////////////////////////////////////////////////////////////////////
   // delay(PUBLISH_INTERVAL);
-  // flowRate = flowSensor.getReading();
-  // simpleWifi.mqttPublish("mendozamartin/feeds/inlet-flowrate", dtostrf(flowRate, 6, 2, msgBuffer));
+  flowRate = flowSensor.getReading();
+  simpleWifi.mqttPublish("mendozamartin/feeds/inlet-flowrate", dtostrf(flowRate, 6, 2, msgBuffer));
 }
 
 void loop()
