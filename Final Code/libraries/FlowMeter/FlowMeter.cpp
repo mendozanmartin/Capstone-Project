@@ -31,7 +31,6 @@ void FlowMeter::flowSampling()
     {
 
         this->countArray[this->arrayCount] = this->pulseCount;
-        Serial.println(this->countArray[this->arrayCount]);
         this->pulseCount = 0;
 
         if (this->arrayCount == 4)

@@ -26,6 +26,8 @@ void TurbidityLib::startSampling()
   while (analogBufferIndex != SCOUNT)
   {
     this->analogBuffer[analogBufferIndex] = analogRead(this->analogPin); //read the analog value and store into the buffer
+    //Serial.println("This is the turbidity sample tingz: ");
+    //Serial.print(analogRead(this->analogPin));
     analogBufferIndex++;
     delay(40); // sample every 40 milliseconds
   }

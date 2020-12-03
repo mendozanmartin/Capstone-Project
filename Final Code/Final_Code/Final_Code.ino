@@ -49,7 +49,7 @@ SimpleWifi simpleWifi;
 //Sensors Declaration
 TdsSensor tdsSensor(tdsSensorPin);
 LevelSensor levelSensor(pressureSensorPin);
-TurbidityLib turbiditySensor(turbiditySensor);
+TurbidityLib turbiditySensor(turbiditySensorPin);
 FlowMeter flowSensor(flowSensorPin);
 
 void setup()
@@ -95,55 +95,31 @@ void mqttConnect()
   simpleWifi.mqttLoop();
 }
 
-int getMedianNum(int bArray[], int iFilterLen)
-{
-  int bTab[iFilterLen];
-  for (byte i = 0; i < iFilterLen; i++)
-    bTab[i] = bArray[i];
-  int i, j, bTemp;
-  for (j = 0; j < iFilterLen - 1; j++)
-  {
-    for (i = 0; i < iFilterLen - j - 1; i++)
-    {
-      if (bTab[i] > bTab[i + 1])
-      {
-        bTemp = bTab[i];
-        bTab[i] = bTab[i + 1];
-        bTab[i + 1] = bTemp;
-      }
-    }
-  }
-  if ((iFilterLen & 1) > 0)
-    bTemp = bTab[(iFilterLen - 1) / 2];
-  else
-    bTemp = (bTab[iFilterLen / 2] + bTab[iFilterLen / 2 - 1]) / 2;
-  return bTemp;
-}
 
 void sensorPublish()
 {
   char msgBuffer[10]; // make sure this is big enough to hold your string
 
-  levelSensorValue = levelSensor.getReading();
-  simpleWifi.mqttPublish("mendozamartin/feeds/collection-tank-level", dtostrf(levelSensorValue, 6, 2, msgBuffer));
+  // levelSensorValue = levelSensor.getReading();
+  // simpleWifi.mqttPublish("mendozamartin/feeds/collection-tank-level", dtostrf(levelSensorValue, 6, 2, msgBuffer));
 
   /////////////////////////////////////////////////////////////////////////////////////////
   delay(PUBLISH_INTERVAL);
   turbiditySensor.startSampling();
   float NTU = turbiditySensor.getReading(); // read the input on analog pin 0:
   simpleWifi.mqttPublish("mendozamartin/feeds/collection-tank-turbidity", dtostrf(NTU, 6, 2, msgBuffer));
-
+  
   ////////////////////////////////////////////////////////////////////////////////////////
-  delay(PUBLISH_INTERVAL);
+  // delay(PUBLISH_INTERVAL);
 
-  tdsSensor.startSampling();
-  tdsValue = tdsSensor.getReading();
-  simpleWifi.mqttPublish("mendozamartin/feeds/collection-tank-tds", dtostrf(tdsValue, 6, 2, msgBuffer));
+  // tdsSensor.startSampling();
+  // tdsValue = tdsSensor.getReading();
+  // simpleWifi.mqttPublish("mendozamartin/feeds/collection-tank-tds", dtostrf(tdsValue, 6, 2, msgBuffer));
 
   /////////////////////////////////////////////////////////////////////////////////////////
-  delay(PUBLISH_INTERVAL);
-  flowRate = flowSensor.getReading();
-  simpleWifi.mqttPublish("mendozamartin/feeds/inlet-flowrate", dtostrf(flowRate, 6, 2, msgBuffer));
+  // delay(PUBLISH_INTERVAL);
+  // flowRate = flowSensor.getReading();
+  // simpleWifi.mqttPublish("mendozamartin/feeds/inlet-flowrate", dtostrf(flowRate, 6, 2, msgBuffer));
 }
 
 void loop()
