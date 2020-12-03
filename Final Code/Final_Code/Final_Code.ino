@@ -50,6 +50,7 @@ SimpleWifi simpleWifi;
 TdsSensor tdsSensor(tdsSensorPin);
 LevelSensor levelSensor(pressureSensorPin);
 TurbidityLib turbiditySensor(turbiditySensor);
+FlowMeter flowSensor(flowSensorPin);
 
 void setup()
 {
@@ -141,16 +142,7 @@ void sensorPublish()
 
   /////////////////////////////////////////////////////////////////////////////////////////
   delay(PUBLISH_INTERVAL);
-  int pulseCount = 0;
-  for (int i = 0; i < 4; i++)
-  {
-    pulseCount += countArray[i];
-  }
-  Serial.println("Pulse Count: " + String(pulseCount));
-  Serial.println("Flow Rate delta t: " + String(10000) + "ms"); // 10 elements in array, each containing 2 seconds of pulse data
-  flowRate = (pulseCount / 425.0) / (10000 * pow(10, -3) / 60.0);
-  Serial.println("Flow Rate: " + String(flowRate) + " L/min");
-
+  flowRate = flowSensor.getReading();
   simpleWifi.mqttPublish("mendozamartin/feeds/inlet-flowrate", dtostrf(flowRate, 6, 2, msgBuffer));
 }
 
@@ -158,6 +150,7 @@ void loop()
 {
   mqttLoop.update();
   sensorLoop.update();
+  flowSensor.flowSampling();
 }
 
 void callback(char *topic, byte *payload, unsigned int length)
