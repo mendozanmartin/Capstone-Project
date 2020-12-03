@@ -5,6 +5,7 @@
 #include "LevelSensor.h"
 #include "TurbidityLib.h"
 #include "ValveControlLib.h"
+#include "FlowMeter.h"
 
 #include <Timer.h>
 
@@ -141,7 +142,6 @@ void sensorPublish()
   /////////////////////////////////////////////////////////////////////////////////////////
   delay(PUBLISH_INTERVAL);
   int pulseCount = 0;
-  Serial.println("This executed");
   for (int i = 0; i < 4; i++)
   {
     pulseCount += countArray[i];

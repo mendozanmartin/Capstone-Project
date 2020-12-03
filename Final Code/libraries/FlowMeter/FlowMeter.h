@@ -12,15 +12,17 @@
 class FlowMeter
 {
 
-    public:
-        FlowMeter(uint8_t digitalPin);
-        float flowValue(void);
+public:
+    FlowMeter(uint8_t digitalPin);
+    void flowSampling(void);
+    float getReading(void);
 
-    private:
-        uint8_t digitalPin;
-        bool pulseSignal, lastPulseSignal;
-        unsigned long delta_t, final_t, initial_t;
-        int pulseCount, countArray[5];
+private:
+    uint8_t digitalPin;
+    bool pulseSignal, lastPulseSignal;
+    unsigned long delta_t, final_t, initial_t;
+    int pulseCount, countArray[5] = {0, 0, 0, 0, 0}, arrayCount;
+    float flowRate;
 };
 
 #endif
