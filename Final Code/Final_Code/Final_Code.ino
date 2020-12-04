@@ -76,10 +76,13 @@ void mqttConnect()
     boolean valveSubscription = 0;
     boolean modeSubscription = 0;
 
-    if (AUTOMATIC_MODE == 1) { // this will prevent users from operating the valves in the dashboard
+    if (AUTOMATIC_MODE == 1)
+    { // this will prevent users from operating the valves in the dashboard
       modeSubscription = simpleWifi.mqttSubscribe("mendozamartin/feeds/automatic-mode", 1);
       simpleWifi.mqttPublish("mendozamartin/feeds/automatic-mode", "ON");
-    } else { // this will allow the user to operate the valves in the dashboard
+    }
+    else
+    { // this will allow the user to operate the valves in the dashboard
       valveSubscription = simpleWifi.mqttSubscribe("mendozamartin/feeds/outlet-valve", 1);
       modeSubscription = simpleWifi.mqttSubscribe("mendozamartin/feeds/automatic-mode", 1);
       simpleWifi.mqttPublish("mendozamartin/feeds/automatic-mode", "OFF");
@@ -108,8 +111,9 @@ void mqttConnect()
 }
 
 void controlValve()
-{ 
-  if (AUTOMATIC_MODE == 1) { // execute logic when system is in automatic mode
+{
+  if (AUTOMATIC_MODE == 1)
+  { // execute logic when system is in automatic mode
     if (levelSensor.getReading() >= LEVEL_THRESHOLD)
     {
       valve.closeValve();
@@ -168,7 +172,8 @@ void callback(char *topic, byte *payload, unsigned int length)
   {
     message[i] = payload[i];
   }
-  if (topic == "mendozamartin/feeds/outlet-valve") {
+  if (topic == "mendozamartin/feeds/outlet-valve")
+  {
     if (message[1] == 'N')
     {
       Serial.println(message);
@@ -179,7 +184,9 @@ void callback(char *topic, byte *payload, unsigned int length)
       Serial.println(message);
       valve.closeValve();
     }
-  } else if (topic == "mendozamartin/feeds/automatic-mode") {
+  }
+  else if (topic == "mendozamartin/feeds/automatic-mode")
+  {
     if (message[1] == 'N')
     {
       Serial.println(message);
@@ -187,9 +194,9 @@ void callback(char *topic, byte *payload, unsigned int length)
     }
     else if (message[1] == 'F')
     {
+      simpleWifi.mqttUnsubscribe("mendozamartin/feeds/outlet-valve");
       Serial.println(message);
       AUTOMATIC_MODE = 0;
     }
   }
-
 }

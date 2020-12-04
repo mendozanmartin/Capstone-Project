@@ -28,7 +28,7 @@
 
 // MQTT_KEEPALIVE : keepAlive interval in Seconds
 #ifndef MQTT_KEEPALIVE
-#define MQTT_KEEPALIVE 15
+#define MQTT_KEEPALIVE 30
 #endif
 
 // MQTT_SOCKET_TIMEOUT: socket timeout interval in Seconds
@@ -39,7 +39,7 @@
 // MQTT_MAX_TRANSFER_SIZE : limit how much data is passed to the network client
 //  in each write call. Needed for the Arduino Wifi Shield. Leave undefined to
 //  pass the entire MQTT packet in each write call.
-// #define MQTT_MAX_TRANSFER_SIZE 512
+#define MQTT_MAX_TRANSFER_SIZE 128
 
 // Possible values for client.state()
 #define MQTT_CONNECTION_TIMEOUT -4
