@@ -117,25 +117,25 @@ void publishSensorReadings()
   char msgBuffer[10]; // make sure this is big enough to hold your string
 
   float levelSensorValue = levelSensor.getReading();
-  simpleWifi.mqttPublish("mendozamartin/feeds/collection-tank-level", dtostrf(levelSensorValue, 6, 2, msgBuffer));
+  simpleWifi.mqttPublish("mendozamartin/feeds/filter-level", dtostrf(levelSensorValue, 6, 2, msgBuffer));
 
   ///////////////////////////////////////////////////////////////////////////////////////
   delay(PUBLISH_INTERVAL);
   turbiditySensor.startSampling();
   float NTU = turbiditySensor.getReading(); // read the input on analog pin 0:
-  simpleWifi.mqttPublish("mendozamartin/feeds/collection-tank-turbidity", dtostrf(NTU, 6, 2, msgBuffer));
+  simpleWifi.mqttPublish("mendozamartin/feeds/final-tank-turbidity", dtostrf(NTU, 6, 2, msgBuffer));
 
   //////////////////////////////////////////////////////////////////////////////////////
   delay(PUBLISH_INTERVAL);
 
   tdsSensor.startSampling();
   float tdsValue = tdsSensor.getReading();
-  simpleWifi.mqttPublish("mendozamartin/feeds/collection-tank-tds", dtostrf(tdsValue, 6, 2, msgBuffer));
+  simpleWifi.mqttPublish("mendozamartin/feeds/final-tank-tds", dtostrf(tdsValue, 6, 2, msgBuffer));
 
   ///////////////////////////////////////////////////////////////////////////////////////
   delay(PUBLISH_INTERVAL);
   float flowRate = flowSensor.getReading();
-  simpleWifi.mqttPublish("mendozamartin/feeds/inlet-flowrate", dtostrf(flowRate, 6, 2, msgBuffer));
+  simpleWifi.mqttPublish("mendozamartin/feeds/outlet-flowrate", dtostrf(flowRate, 6, 2, msgBuffer));
 }
 
 void loop()
