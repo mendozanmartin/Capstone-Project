@@ -13,7 +13,7 @@
 #define WIFI_PASSWORD "livefasteatass"
 
 #define ADAFRUIT_IO_USERNAME "mendozamartin"
-#define ADAFRUIT_IO_KEY ""
+#define ADAFRUIT_IO_KEY "aio_AIIx15gMzTtja7zG8lNWo5Qg8yUN"
 
 #define MQTT_SERVER "io.adafruit.com"
 #define MQTT_PORT 1883

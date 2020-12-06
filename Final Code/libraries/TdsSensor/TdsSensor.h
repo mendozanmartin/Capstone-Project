@@ -7,13 +7,12 @@
 
 #define SCOUNT 30
 #define VREF 5.0 // analog reference voltage(Volt) of the ADC
-#define TEMPERATURE 25
 
 class TdsSensor
 {
 
 public:
-    TdsSensor(uint8_t analogPin);
+    TdsSensor(uint8_t analogPin, float TEMPERATURE);
     float getReading(void);
     int getMedianNum(int bArray[], int iFilterLen);
     void startSampling(void);
@@ -24,5 +23,6 @@ private:
     float reading;
     float tdsValue;
     uint8_t analogPin;
+    float TEMPERATURE;
 };
 #endif

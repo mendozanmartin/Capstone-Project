@@ -5,17 +5,22 @@
 
 #include "TurbidityLib.h"
 
-TurbidityLib::TurbidityLib(uint8_t analogPin)
+TurbidityLib::TurbidityLib(uint8_t analogPin, float calibrationFactor)
 {
   this->analogPin = analogPin;
+  this->calibrationFactor = calibrationFactor;
 }
 
 float TurbidityLib::getReading()
 {
-  float averageSensorValue = this->getMedianNum(this->analogBuffer, SCOUNT);   // read the input on analog pin 0:
-  float voltRead = (averageSensorValue * (5.0 / 1024.0)) + CALIBRATION_FACTOR; // Convert the analog reading (which goes from 0 - 1023) to a voltRead (0 - 5V):
+  float averageSensorValue = this->getMedianNum(this->analogBuffer, SCOUNT);        // read the input on analog pin 0:
+  float voltRead = (averageSensorValue * (5.0 / 1024.0)) + this->calibrationFactor; // Convert the analog reading (which goes from 0 - 1023) to a voltRead (0 - 5V):
   float ntu = (-1120.4 * pow(voltRead, 2)) + (5742.3 * voltRead) - 4352.9;
 
+  if (ntu <= 0)
+  {
+    ntu = 0;
+  }
   Serial.println("NTU: " + String(ntu));
   return ntu;
 }

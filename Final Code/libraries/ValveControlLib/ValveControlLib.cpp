@@ -12,12 +12,12 @@ ValveCtrl::ValveCtrl(uint8_t outputPin)
 
 void ValveCtrl::openValve()
 {
-  digitalWrite(outputPin, LOW);
+  digitalWrite(this->outputPin, LOW);
   Serial.println("Opening Valve");
 }
 
 void ValveCtrl::closeValve()
 {
-  digitalWrite(outputPin, HIGH);
+  digitalWrite(this->outputPin, HIGH);
   Serial.println("closing Valve");
 }

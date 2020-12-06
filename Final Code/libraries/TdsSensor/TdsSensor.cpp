@@ -1,9 +1,10 @@
 
 #include "TdsSensor.h"
 
-TdsSensor::TdsSensor(uint8_t analogPin)
+TdsSensor::TdsSensor(uint8_t analogPin, float TEMPERATURE)
 {
     this->analogPin = analogPin;
+    this->TEMPERATURE = TEMPERATURE;
 }
 
 void TdsSensor::startSampling()
@@ -22,7 +23,7 @@ float TdsSensor::getReading()
 {
     float averageVoltage = 0;
     averageVoltage = this->getMedianNum(this->analogBuffer, SCOUNT) * (float)VREF / 1024.0;                                                                                                // read the analog value more stable by the median filtering algorithm, and convert to voltage value
-    float compensationCoefficient = 1.0 + 0.02 * (TEMPERATURE - 25.0);                                                                                                                     //temperature compensation formula: fFinalResult(25^C) = fFinalResult(current)/(1.0+0.02*(fTP-25.0));
+    float compensationCoefficient = 1.0 + 0.02 * (this->TEMPERATURE - 25.0);                                                                                                               //temperature compensation formula: fFinalResult(25^C) = fFinalResult(current)/(1.0+0.02*(fTP-25.0));
     float compensationVoltage = averageVoltage / compensationCoefficient;                                                                                                                  //temperature compensation
     this->tdsValue = (133.42 * compensationVoltage * compensationVoltage * compensationVoltage - 255.86 * compensationVoltage * compensationVoltage + 857.39 * compensationVoltage) * 0.5; //convert voltage value to tds value
                                                                                                                                                                                            //Serial.print("voltage:");

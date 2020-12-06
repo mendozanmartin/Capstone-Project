@@ -13,7 +13,7 @@
 #define tdsSensorPin A1
 #define turbiditySensorPin A2
 #define flowSensorPin 8
-#define inletValvePin 9
+#define inletValvePin 10
 
 char ssid[] = WIFI_SSID;     // your network SSID (name)
 char pass[] = WIFI_PASSWORD; // your network password
@@ -25,7 +25,7 @@ int port = MQTT_PORT;
 void callback(char *topic, byte *payload, unsigned int length);
 void reconnect();
 
-float LEVEL_THRESHOLD = 10;
+float LEVEL_THRESHOLD = 21;
 int PUBLISH_INTERVAL = 2500;
 int valveState = 1;
 
@@ -37,9 +37,9 @@ Timer controlLoop;
 SimpleWifi simpleWifi;
 
 //Sensors Declaration
-TdsSensor tdsSensor(tdsSensorPin);
-LevelSensor levelSensor(pressureSensorPin);
-TurbidityLib turbiditySensor(turbiditySensorPin);
+TdsSensor tdsSensor(tdsSensorPin, 25);
+LevelSensor levelSensor(pressureSensorPin, 0.4);
+TurbidityLib turbiditySensor(turbiditySensorPin, -0.65);
 FlowMeter flowSensor(flowSensorPin);
 ValveCtrl valve(inletValvePin);
 
@@ -51,6 +51,9 @@ void setup()
   pinMode(turbiditySensorPin, INPUT);
   pinMode(flowSensorPin, INPUT);
   pinMode(pressureSensorPin, INPUT);
+  pinMode(inletValvePin, OUTPUT);
+
+  valve.closeValve();
 
   // initialize serial for debugging
   Serial.begin(115200);
@@ -73,11 +76,11 @@ void mqttConnect()
   {
     simpleWifi.connectToMqtt(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEY, server);
     boolean valveSubscription = 0;
-    valveSubscription = simpleWifi.mqttSubscribe("mendozamartin/feeds/inlet-valve", 1);
+    valveSubscription = simpleWifi.mqttSubscribe("mendozamartin/feeds/inlet-valve", 0);
 
     if (AUTOMATIC_MODE == 1)
     { // this will prevent users from operating the valves in the dashboard
-      simpleWifi.mqttPublish("mendozamartin/feeds/inlet-valve", "Automatic");
+      simpleWifi.mqttPublish("mendozamartin/feeds/inlet-valve", "Auto");
     }
     else
     { // this will allow the user to operate the valves in the dashboard

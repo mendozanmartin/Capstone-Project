@@ -2,6 +2,5 @@
     "board": "arduino:avr:mega",
     "configuration": "cpu=atmega2560",
     "sketch": "Final Code\\Arduino Two\\Arduino_Two.ino",
-    // "sketch": "Final Code\\Arduino One\\Arduino_One.ino",
     "port": "COM4"
 }

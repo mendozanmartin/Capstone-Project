@@ -4,7 +4,6 @@
 #include "TdsSensor.h"
 #include "LevelSensor.h"
 #include "TurbidityLib.h"
-#include "ValveControlLib.h"
 #include "FlowMeter.h"
 
 #include <Timer.h>
@@ -13,7 +12,6 @@
 #define tdsSensorPin A1
 #define turbiditySensorPin A2
 #define flowSensorPin 8
-#define inletValvePin 9
 
 char ssid[] = WIFI_SSID;     // your network SSID (name)
 char pass[] = WIFI_PASSWORD; // your network password
@@ -26,19 +24,17 @@ void callback(char *topic, byte *payload, unsigned int length);
 void reconnect();
 
 int PUBLISH_INTERVAL = 2500;
-int valveState = 1;
 
 //Timer declaration
 Timer mqttLoop;
 Timer sensorLoop;
-Timer controlLoop;
 
 SimpleWifi simpleWifi;
 
 //Sensors Declaration
-TdsSensor tdsSensor(tdsSensorPin);
-LevelSensor levelSensor(pressureSensorPin);
-TurbidityLib turbiditySensor(turbiditySensorPin);
+TdsSensor tdsSensor(tdsSensorPin, 25);
+LevelSensor levelSensor(pressureSensorPin, 0.75);
+TurbidityLib turbiditySensor(turbiditySensorPin, -0.63);
 FlowMeter flowSensor(flowSensorPin);
 
 int AUTOMATIC_MODE = 1; // set arduino to automatic mode first
@@ -104,7 +100,6 @@ void loop()
 {
   mqttLoop.update();
   sensorLoop.update();
-  controlLoop.update();
   flowSensor.flowSampling();
 }
 
