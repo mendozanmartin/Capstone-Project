@@ -15,6 +15,7 @@ class LevelSensor
 public:
     LevelSensor(uint8_t analogPin, float calibrationFactor);
     float getReading(void);
+    float getReading(int offset);
 
 private:
     uint8_t analogPin;

@@ -102,12 +102,17 @@ boolean SimpleWifi::mqttSubscribe(const char *topic, uint8_t qos)
   return this->mqttClient.subscribe(topic, qos);
 }
 
-boolean SimpleWifi::mqttUnsubscribe(const char *topic) {
+boolean SimpleWifi::mqttUnsubscribe(const char *topic)
+{
   return this->mqttClient.unsubscribe(topic);
 }
-
 
 void SimpleWifi::mqttPublish(const char *topic, const char *payload)
 {
   this->mqttClient.publish(topic, payload);
+}
+
+void SimpleWifi::wifiFlush(void)
+{
+  this->wifiClient.flush();
 }

@@ -25,7 +25,8 @@ int port = MQTT_PORT;
 void callback(char *topic, byte *payload, unsigned int length);
 void reconnect();
 
-float LEVEL_THRESHOLD = 21;
+float UPPER_LEVEL_THRESHOLD = 4;
+float LOWER_LEVEL_THRESHOLD = 2;
 int PUBLISH_INTERVAL = 2500;
 int valveState = 1;
 
@@ -38,8 +39,8 @@ SimpleWifi simpleWifi;
 
 //Sensors Declaration
 TdsSensor tdsSensor(tdsSensorPin, 25);
-LevelSensor levelSensor(pressureSensorPin, 0.4);
-TurbidityLib turbiditySensor(turbiditySensorPin, -0.65);
+LevelSensor levelSensor(pressureSensorPin, 1);
+TurbidityLib turbiditySensor(turbiditySensorPin, 0.65);
 FlowMeter flowSensor(flowSensorPin);
 ValveCtrl valve(inletValvePin);
 
@@ -59,6 +60,9 @@ void setup()
   Serial.begin(115200);
   // initialize serial for ESP module
   Serial1.begin(115200);
+  // Serial1.println("AT+UART_DEF=9600,8,1,0,0");
+  // Serial1.flush();
+  // Serial1.begin(9600);
 
   simpleWifi.init(&Serial1, server, port, callback);
   simpleWifi.connectToWifi(ssid, pass);
@@ -76,7 +80,7 @@ void mqttConnect()
   {
     simpleWifi.connectToMqtt(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEY, server);
     boolean valveSubscription = 0;
-    valveSubscription = simpleWifi.mqttSubscribe("mendozamartin/feeds/inlet-valve", 0);
+    valveSubscription = simpleWifi.mqttSubscribe("mendozamartin/feeds/inlet-valve", 1);
 
     if (AUTOMATIC_MODE == 1)
     { // this will prevent users from operating the valves in the dashboard
@@ -96,7 +100,6 @@ void mqttConnect()
       Serial.println("MQTT client is not subscribed to valve topic");
     }
   }
-
   simpleWifi.mqttLoop();
 }
 
@@ -104,11 +107,11 @@ void controlValve()
 {
   if (AUTOMATIC_MODE == 1)
   { // execute logic when system is in automatic mode
-    if (levelSensor.getReading() >= LEVEL_THRESHOLD)
+    if (levelSensor.getReading(12) >= UPPER_LEVEL_THRESHOLD)
     {
       valve.closeValve();
     }
-    else
+    else if (levelSensor.getReading(12) <= LOWER_LEVEL_THRESHOLD)
     {
       valve.openValve();
     }
@@ -117,24 +120,21 @@ void controlValve()
 
 void publishSensorReadings()
 {
-  char msgBuffer[10]; // make sure this is big enough to hold your string
+  char msgBuffer[20]; // make sure this is big enough to hold your string
 
-  float levelSensorValue = levelSensor.getReading();
+  float levelSensorValue = levelSensor.getReading(12);
   simpleWifi.mqttPublish("mendozamartin/feeds/filter-level", dtostrf(levelSensorValue, 6, 2, msgBuffer));
-
   ///////////////////////////////////////////////////////////////////////////////////////
   delay(PUBLISH_INTERVAL);
   turbiditySensor.startSampling();
   float NTU = turbiditySensor.getReading(); // read the input on analog pin 0:
   simpleWifi.mqttPublish("mendozamartin/feeds/final-tank-turbidity", dtostrf(NTU, 6, 2, msgBuffer));
-
   //////////////////////////////////////////////////////////////////////////////////////
   delay(PUBLISH_INTERVAL);
 
   tdsSensor.startSampling();
   float tdsValue = tdsSensor.getReading();
   simpleWifi.mqttPublish("mendozamartin/feeds/final-tank-tds", dtostrf(tdsValue, 6, 2, msgBuffer));
-
   ///////////////////////////////////////////////////////////////////////////////////////
   delay(PUBLISH_INTERVAL);
   float flowRate = flowSensor.getReading();

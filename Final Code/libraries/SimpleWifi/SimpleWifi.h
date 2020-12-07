@@ -27,6 +27,7 @@ public:
   void printWifiStatus();
   void connectToMqtt(const char *adafruitUsername, const char *adafruitKey, const char *server);
   void mqttLoop(void);
+  void wifiFlush();
 
 private:
   WiFiEspClass wifiEsp;
