@@ -11,6 +11,6 @@ void setup() {
 void loop() {
   pressureSensorValue = analogRead(pressureSensorPin);            // read the input on sensor pin
   pressureSensorVoltage = pressureSensorValue * (5.0 / 1023.0);         // Convert the analog reading (which goes from 0 - 1023) to a pressureSensorVoltage (0 - 5V)
-  Serial.println(pressureSensorVoltage);                         // print out the value 
+  Serial.println(pressureSensorValue);                         // print out the value 
   delay(200);
 }

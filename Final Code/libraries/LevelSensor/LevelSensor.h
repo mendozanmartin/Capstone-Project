@@ -13,13 +13,13 @@ class LevelSensor
 {
 
 public:
-    LevelSensor(uint8_t analogPin, float calibrationFactor);
+    LevelSensor(uint8_t analogPin);
     float getReading(void);
-    float getReading(int offset);
+    // float getReading(int offset);
 
 private:
     uint8_t analogPin;
     float level;
-    float calibrationFactor;
+    // float calibrationFactor;
 };
 #endif

@@ -14,6 +14,7 @@
 #define turbiditySensorPin A2
 #define flowSensorPin 8
 #define inletValvePin 10
+#define manualValvePin 52
 
 char ssid[] = WIFI_SSID;     // your network SSID (name)
 char pass[] = WIFI_PASSWORD; // your network password
@@ -25,8 +26,9 @@ int port = MQTT_PORT;
 void callback(char *topic, byte *payload, unsigned int length);
 void reconnect();
 
-float UPPER_LEVEL_THRESHOLD = 4;
-float LOWER_LEVEL_THRESHOLD = 2;
+int UPPER_LEVEL_THRESHOLD = 6;
+int LOWER_LEVEL_THRESHOLD = 2.5;
+int PRESSURE_CALIBRATION = 0;
 int PUBLISH_INTERVAL = 2500;
 int valveState = 1;
 
@@ -39,7 +41,7 @@ SimpleWifi simpleWifi;
 
 //Sensors Declaration
 TdsSensor tdsSensor(tdsSensorPin, 25);
-LevelSensor levelSensor(pressureSensorPin, 1);
+LevelSensor levelSensor(pressureSensorPin);
 TurbidityLib turbiditySensor(turbiditySensorPin, 0.65);
 FlowMeter flowSensor(flowSensorPin);
 ValveCtrl valve(inletValvePin);
@@ -53,6 +55,7 @@ void setup()
   pinMode(flowSensorPin, INPUT);
   pinMode(pressureSensorPin, INPUT);
   pinMode(inletValvePin, OUTPUT);
+  pinMode(manualValvePin, INPUT);
 
   valve.closeValve();
 
@@ -75,7 +78,7 @@ void setup()
 
 void mqttConnect()
 {
-
+  simpleWifi.mqttUnsubscribe("mendozamartin/feeds/inlet-valve");
   while (!simpleWifi.mqttConnected())
   {
     simpleWifi.connectToMqtt(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEY, server);
@@ -105,24 +108,33 @@ void mqttConnect()
 
 void controlValve()
 {
-  if (AUTOMATIC_MODE == 1)
-  { // execute logic when system is in automatic mode
-    if (levelSensor.getReading(12) >= UPPER_LEVEL_THRESHOLD)
-    {
-      valve.closeValve();
-    }
-    else if (levelSensor.getReading(12) <= LOWER_LEVEL_THRESHOLD)
-    {
-      valve.openValve();
-    }
+  // if (AUTOMATIC_MODE == 1)
+  // { // execute logic when system is in automatic mode
+  //   if (levelSensor.getReading() >= UPPER_LEVEL_THRESHOLD)
+  //   {
+  //     valve.closeValve();
+  //   }
+  //   else if (levelSensor.getReading() <= LOWER_LEVEL_THRESHOLD)
+  //   {
+  //     valve.openValve();
+  //   }
+  // }
+
+  if (digitalRead(manualValvePin) == 1)
+  {
+    valve.closeValve();
+  }
+  else if (digitalRead(manualValvePin) == 0)
+  {
+    valve.openValve();
   }
 }
 
 void publishSensorReadings()
 {
   char msgBuffer[20]; // make sure this is big enough to hold your string
-
-  float levelSensorValue = levelSensor.getReading(12);
+  delay(PUBLISH_INTERVAL);
+  float levelSensorValue = levelSensor.getReading();
   simpleWifi.mqttPublish("mendozamartin/feeds/filter-level", dtostrf(levelSensorValue, 6, 2, msgBuffer));
   ///////////////////////////////////////////////////////////////////////////////////////
   delay(PUBLISH_INTERVAL);
