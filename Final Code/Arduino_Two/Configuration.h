@@ -9,11 +9,11 @@
 
 #include "Arduino.h"
 
-#define WIFI_SSID "Hey"
-#define WIFI_PASSWORD "livefasteatass"
+#define WIFI_SSID ""
+#define WIFI_PASSWORD ""
 
 #define ADAFRUIT_IO_USERNAME "mendozamartin"
-#define ADAFRUIT_IO_KEY "aio_UUTB761C9ljFBPDBSkTP5v7GKZQh"
+#define ADAFRUIT_IO_KEY ""
 
 // #define ADAFRUIT_IO_USERNAME ""
 // #define ADAFRUIT_IO_KEY ""

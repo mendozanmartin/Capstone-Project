@@ -19,7 +19,6 @@ public:
   SimpleWifi();
   void init(Stream *espSerial, const char *domain, uint16_t port, MQTT_CALLBACK_SIGNATURE);
   void connectToWifi(char *ssid, char *pass);
-  boolean publishMessage(const char *topic, const char *payload);
   boolean mqttConnected(void);
   boolean mqttSubscribe(const char *topic, uint8_t qos);
   boolean mqttUnsubscribe(const char *topic);

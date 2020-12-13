@@ -21,7 +21,6 @@ public:
 
 private:
   int analogBuffer[SCOUNT];
-  int analogBufferTemp[SCOUNT];
   uint8_t analogPin;
   float calibrationFactor;
 };

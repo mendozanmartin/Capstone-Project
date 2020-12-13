@@ -32,6 +32,10 @@ int PRESSURE_CALIBRATION = 0;
 int PUBLISH_INTERVAL = 2500;
 int valveState = 1;
 
+// wiring for the ESP module can be found in this tuturial below
+// https://www.instructables.com/noobs-guide-to-ESP8266-with-Arduino-Mega-2560-or-U/
+// Please use Serial1 which is pin 19 (RX) and pin 18 (TX)
+
 //Timer declaration
 Timer mqttLoop;
 Timer sensorLoop;
@@ -41,7 +45,7 @@ SimpleWifi simpleWifi;
 
 //Sensors Declaration
 TdsSensor tdsSensor(tdsSensorPin, 25);
-LevelSensor levelSensor(pressureSensorPin);
+LevelSensor levelSensor(pressureSensorPin, 0.75);
 TurbidityLib turbiditySensor(turbiditySensorPin, 0.65);
 FlowMeter flowSensor(flowSensorPin);
 ValveCtrl valve(inletValvePin);
@@ -62,10 +66,7 @@ void setup()
   // initialize serial for debugging
   Serial.begin(115200);
   // initialize serial for ESP module
-  Serial1.begin(115200);
-  // Serial1.println("AT+UART_DEF=9600,8,1,0,0");
-  // Serial1.flush();
-  // Serial1.begin(9600);
+  Serial1.begin(115200); // Serial1 is pin 19 (RX) and pin 18 (TX)
 
   simpleWifi.init(&Serial1, server, port, callback);
   simpleWifi.connectToWifi(ssid, pass);
@@ -112,11 +113,11 @@ void controlValve()
   // { // execute logic when system is in automatic mode
   //   if (levelSensor.getReading() >= UPPER_LEVEL_THRESHOLD)
   //   {
-  //     valve.closeValve();
+  //     valve.closeValve(PRESSURE_CALIBRATION);
   //   }
   //   else if (levelSensor.getReading() <= LOWER_LEVEL_THRESHOLD)
   //   {
-  //     valve.openValve();
+  //     valve.openValve(PRESSURE_CALIBRATION);
   //   }
   // }
 
@@ -134,7 +135,7 @@ void publishSensorReadings()
 {
   char msgBuffer[20]; // make sure this is big enough to hold your string
   delay(PUBLISH_INTERVAL);
-  float levelSensorValue = levelSensor.getReading();
+  float levelSensorValue = levelSensor.getReading(PRESSURE_CALIBRATION);
   simpleWifi.mqttPublish("mendozamartin/feeds/filter-level", dtostrf(levelSensorValue, 6, 2, msgBuffer));
   ///////////////////////////////////////////////////////////////////////////////////////
   delay(PUBLISH_INTERVAL);
